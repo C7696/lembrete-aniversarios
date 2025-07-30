@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lembrete de Aniversários</title>
+    <style>
+        /* Estilos para uma aparência moderna e limpa */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --secondary-color: #6c757d;
+            --secondary-hover: #5a6268;
+            --danger-color: #dc3545;
+            --danger-hover: #c82333;
+            --light-bg: #f8f9fa;
+            --white-bg: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --success-bg: #d4edda;
+            --success-text: #155724;
+            --danger-bg: #f8d7da;
+            --danger-text: #721c24;
+            --warning-bg: #fff3cd;
+            --warning-text: #856404;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background-color: var(--white-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 700px;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+
+        h2 {
+            margin-top: 2rem;
+        }
+        
+        #notification-status {
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for status changes */
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input[type="text"], input[type="tel"], input[type="date"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        button, .file-label {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover, .file-label:hover {
+            background-color: var(--primary-hover);
+        }
+        
+        button:active, .file-label:active {
+            transform: scale(0.98);
+        }
+
+        button.secondary {
+            background-color: var(--secondary-color);
+        }
+        button.secondary:hover {
+            background-color: var(--secondary-hover);
+        }
+
+        button.danger {
+            background-color: var(--danger-color);
+        }
+
+        button.danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        #listaContatos {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 1.5rem;
+        }
+
+        #listaContatos li {
+            background-color: var(--light-bg);
+            padding: 1rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        #importarCSV {
+            display: none; /* Esconde o input de arquivo padrão */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Lembrete de Aniversários</h1>
+
+        <div id="notification-status" role="status" aria-live="polite"></div>
+
+        <div id="form-cadastro">
+            <h2>Adicionar / Editar Contato</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="nome">Nome:</label>
+                    <input type="text" id="nome" placeholder="Nome completo da pessoa" required>
+                </div>
+                <div class="form-group">
+                    <label for="telefone">Telefone:</label>
+                    <input type="tel" id="telefone" placeholder="(99) 99999-9999">
+                </div>
+                <div class="form-group">
+                    <label for="nascimento">Data de Aniversário:</label>
+                    <input type="date" id="nascimento" required>
+                </div>
+            </div>
+            <input type="hidden" id="contactId">
+            <div class="button-group">
+                <button onclick="salvarContato()">Salvar Contato</button>
+                <label for="importarCSV" class="file-label">Importar de CSV</label>
+                <input type="file" id="importarCSV" accept=".csv" onchange="importarDeCSV(event)">
+                <button class="secondary" onclick="testarNotificacao()">Testar Notificação</button>
+            </div>
+        </div>
+
+        <div id="contatos">
+            <h2>Contatos Salvos</h2>
+            <ul id="listaContatos">
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            updateNotificationStatus();
+            pedirPermissaoNotificacao();
+            renderizarContatos();
+            // Check for birthdays immediately on load, and then set interval
+            verificarAniversarios();
+            setInterval(verificarAniversarios, 3600000); // Check every hour (3600000 milliseconds)
+        });
+
+        // Constants for localStorage keys and messages
+        const STORAGE_KEY = 'contatosAniversario';
+        const NOTIFICATION_ICON_DEFAULT = 'https://placehold.co/128x128/007bff/white?text=🎁';
+        const NOTIFICATION_ICON_TEST = 'https://placehold.co/128x128/28a745/white?text=OK';
+
+        function displayMessage(message, type = 'info', duration = 3000) {
+            const statusEl = document.getElementById('notification-status');
+            let bgColor, textColor;
+
+            switch (type) {
+                case 'success':
+                    bgColor = 'var(--success-bg)';
+                    textColor = 'var(--success-text)';
+                    break;
+                case 'error':
+                    bgColor = 'var(--danger-bg)';
+                    textColor = 'var(--danger-text)';
+                    break;
+                case 'warning':
+                    bgColor = 'var(--warning-bg)';
+                    textColor = 'var(--warning-text)';
+                    break;
+                case 'info':
+                default:
+                    bgColor = 'var(--light-bg)';
+                    textColor = 'var(--text-color)';
+                    break;
+            }
+
+            statusEl.style.backgroundColor = bgColor;
+            statusEl.style.color = textColor;
+            statusEl.innerHTML = `<strong>${message}</strong>`;
+
+            if (duration > 0) {
+                setTimeout(() => updateNotificationStatus(), duration);
+            }
+        }
+
+        function updateNotificationStatus() {
+            const statusEl = document.getElementById('notification-status');
+            let statusText = '<strong>Status da Notificação:</strong> ';
+            let extraInfo = '';
+            let bgColor = 'var(--light-bg)';
+            let textColor = 'var(--text-color)';
+
+            if (!('Notification' in window)) {
+                statusText += 'Não suportado';
+                bgColor = 'var(--danger-bg)';
+                textColor = 'var(--danger-text)';
+            } else {
+                switch (Notification.permission) {
+                    case 'granted':
+                        statusText += 'Permitido ✔️';
+                        bgColor = 'var(--success-bg)';
+                        textColor = 'var(--success-text)';
+                        break;
+                    case 'denied':
+                        statusText += 'Negado ❌';
+                        bgColor = 'var(--danger-bg)';
+                        textColor = 'var(--danger-text)';
+                        extraInfo = '<br><small>Você precisa permitir nas configurações do seu navegador (no ícone de leão 🦁 ou cadeado 🔒) para receber avisos.</small>';
+                        break;
+                    default:
+                        statusText += 'Aguardando sua permissão...';
+                        bgColor = 'var(--warning-bg)';
+                        textColor = 'var(--warning-text)';
+                }
+            }
+            statusEl.style.backgroundColor = bgColor;
+            statusEl.style.color = textColor;
+            statusEl.innerHTML = statusText + extraInfo;
+        }
+
+        function pedirPermissaoNotificacao() {
+            if ('Notification' in window) {
+                if (Notification.permission === 'denied') {
+                    // Do not prompt if permission is already denied
+                    return;
+                }
+                Notification.requestPermission().then(permission => {
+                    updateNotificationStatus();
+                    if (permission === 'granted') {
+                        verificarAniversarios();
+                    }
+                });
+            } else {
+                updateNotificationStatus(); // Update status even if not supported
+            }
+        }
+
+        function testarNotificacao() {
+            if (!('Notification' in window)) {
+                displayMessage('Seu navegador não suporta notificações.', 'error');
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                new Notification('Teste de Notificação', {
+                    body: 'Se você vê esta mensagem, as notificações estão funcionando!',
+                    icon: NOTIFICATION_ICON_TEST,
+                    requireInteraction: true
+                });
+                displayMessage('Notificação de teste enviada!', 'success');
+            } else if (Notification.permission === 'denied') {
+                displayMessage('As notificações estão bloqueadas. Por favor, permita nas configurações do navegador (ícone de leão 🦁 ou cadeado 🔒).', 'warning', 6000);
+            } else {
+                displayMessage('Por favor, permita as notificações quando o navegador solicitar.', 'info');
+                pedirPermissaoNotificacao();
+            }
+        }
+
+        function getContatos() {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        }
+
+        function salvarListaContatos(contatos) {
+            contatos.sort((a, b) => a.nome.localeCompare(b.nome));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(contatos));
+        }
+
+        function salvarContato() {
+            const nome = document.getElementById('nome').value.trim();
+            const telefone = document.getElementById('telefone').value.trim();
+            const nascimento = document.getElementById('nascimento').value; // YYYY-MM-DD format
+            const contactId = document.getElementById('contactId').value;
+
+            if (!nome || !nascimento) {
+                displayMessage('Por favor, preencha o nome e a data de aniversário.', 'error');
+                return;
+            }
+
+            let contatos = getContatos();
+
+            if (contactId) {
+                const contatoIndex = contatos.findIndex(c => c.id == contactId);
+                if (contatoIndex > -1) {
+                    contatos[contatoIndex] = { ...contatos[contatoIndex], nome, telefone, nascimento };
+                    displayMessage('Contato atualizado com sucesso!', 'success');
+                }
+            } else {
+                const novoContato = {
+                    id: Date.now(), // Unique ID for new contacts
+                    nome,
+                    telefone,
+                    nascimento
+                };
+                contatos.push(novoContato);
+                displayMessage('Contato adicionado com sucesso!', 'success');
+            }
+
+            salvarListaContatos(contatos);
+            limparFormulario();
+            renderizarContatos();
+            verificarAniversarios(); // Re-check birthdays after saving/updating
+        }
+        
+        function limparFormulario() {
+            document.getElementById('nome').value = '';
+            document.getElementById('telefone').value = '';
+            document.getElementById('nascimento').value = '';
+            document.getElementById('contactId').value = '';
+        }
+
+        function renderizarContatos() {
+            const contatos = getContatos();
+            const listaElemento = document.getElementById('listaContatos');
+            listaElemento.innerHTML = ''; 
+
+            if (contatos.length === 0) {
+                listaElemento.innerHTML = '<li>Nenhum contato salvo ainda.</li>';
+                return;
+            }
+
+            contatos.forEach(contato => {
+                const [ano, mes, dia] = contato.nascimento.split('-');
+                const dataFormatada = `${dia}/${mes}/${ano}`;
+                const item = document.createElement('li');
+                item.innerHTML = `
+                    <div>
+                        <strong>${contato.nome}</strong><br>
+                        <small>Telefone: ${contato.telefone || 'Não informado'} | Aniversário: ${dataFormatada}</small>
+                    </div>
+                    <div class="button-group">
+                        <button onclick="editarContato(${contato.id})">Editar</button>
+                        <button class="danger" onclick="excluirContato(${contato.id})">Excluir</button>
+                    </div>
+                `;
+                listaElemento.appendChild(item);
+            });
+        }
+        
+        function editarContato(id) {
+            const contatos = getContatos();
+            const contato = contatos.find(c => c.id === id);
+            if (contato) {
+                document.getElementById('contactId').value = contato.id;
+                document.getElementById('nome').value = contato.nome;
+                document.getElementById('telefone').value = contato.telefone;
+                document.getElementById('nascimento').value = contato.nascimento;
+                window.scrollTo(0, 0); // Scroll to top to show the form
+            }
+        }
+
+        function excluirContato(id) {
+            if (!confirm('Tem certeza que deseja excluir este contato?')) {
+                return;
+            }
+            let contatos = getContatos();
+            contatos = contatos.filter(contato => contato.id !== id);
+            salvarListaContatos(contatos);
+            renderizarContatos();
+            displayMessage('Contato excluído com sucesso!', 'info');
+        }
+
+        function verificarAniversarios() {
+            if (Notification.permission !== 'granted') {
+                return; 
+            }
+            
+            console.log('Verificando aniversariantes do dia...');
+            const contatos = getContatos();
+            const hoje = new Date();
+            const diaHoje = hoje.getDate();
+            const mesHoje = hoje.getMonth() + 1; // getMonth() is 0-indexed
+
+            contatos.forEach(contato => {
+                // Robust parsing of birthday date
+                const [anoNasc, mesNascStr, diaNascStr] = contato.nascimento.split('-');
+                const diaNasc = parseInt(diaNascStr, 10);
+                const mesNasc = parseInt(mesNascStr, 10); // From YYYY-MM-DD, month is 1-indexed
+
+                if (diaHoje === diaNasc && mesHoje === mesNasc) {
+                    // Prevent duplicate notifications for the same birthday on the same day
+                    // A more advanced solution would track sent notifications per day
+                    const lastNotifiedKey = `lastNotified_${contato.id}_${diaHoje}_${mesHoje}`;
+                    if (!sessionStorage.getItem(lastNotifiedKey)) {
+                        enviarNotificacao(contato.nome);
+                        sessionStorage.setItem(lastNotifiedKey, 'true'); // Mark as notified for today
+                    }
+                }
+            });
+        }
+
+        function enviarNotificacao(nome) {
+            const options = {
+                body: `Hoje é o aniversário de ${nome}! Não se esqueça de parabenizá-lo(a).`,
+                icon: NOTIFICATION_ICON_DEFAULT,
+                vibrate: [200, 100, 200],
+                requireInteraction: true 
+            };
+            new Notification('🎉 Lembrete de Aniversário! 🎉', options);
+        }
+
+        function importarDeCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Basic file type check for CSV
+            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                displayMessage('Por favor, selecione um arquivo CSV válido (.csv).', 'error');
+                event.target.value = ''; // Clear file input
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const linhas = text.split('\n').filter(linha => linha.trim() !== '');
+                const contatosAtuais = getContatos();
+                let contatosImportadosCount = 0;
+                let linhasInvalidasCount = 0;
+
+                linhas.forEach(linha => {
+                    // Robust parsing: split by comma, then trim each part
+                    const partes = linha.split(',').map(part => part.trim());
+                    
+                    if (partes.length < 2) { // Minimum: name and birthdate (YYYY-MM-DD)
+                        linhasInvalidasCount++;
+                        return;
+                    }
+
+                    const nome = partes[0];
+                    // Assume birthdate is the last part
+                    const nascimento = partes[partes.length - 1]; 
+                    // Join middle parts for phone, if any (handles commas in phone numbers if desired)
+                    const telefone = partes.length > 2 ? partes.slice(1, partes.length - 1).join(',') : '';
+
+                    if (nome && nascimento && /^\d{4}-\d{2}-\d{2}$/.test(nascimento)) {
+                        const novoContato = {
+                            id: Date.now() + Math.random(), // Add random for better uniqueness on import
+                            nome: nome,
+                            telefone: telefone,
+                            nascimento: nascimento
+                        };
+                        // Prevent adding duplicate contacts (based on name and birthdate)
+                        const isDuplicate = contatosAtuais.some(
+                            c => c.nome === novoContato.nome && c.nascimento === novoContato.nascimento
+                        );
+                        if (!isDuplicate) {
+                            contatosAtuais.push(novoContato);
+                            contatosImportadosCount++;
+                        }
+                    } else {
+                        linhasInvalidasCount++;
+                    }
+                });
+
+                if (contatosImportadosCount > 0) {
+                    salvarListaContatos(contatosAtuais);
+                    renderizarContatos();
+                    displayMessage(`${contatosImportadosCount} contatos importados com sucesso!`, 'success');
+                } else if (linhasInvalidasCount === linhas.length) {
+                    displayMessage('Nenhum contato válido foi encontrado no arquivo. Verifique o formato: Nome,Telefone,AAAA-MM-DD', 'error', 8000);
+                } else {
+                    displayMessage('Nenhum contato novo foi importado. Podem ser duplicatas ou formatos inválidos.', 'warning', 6000);
+                }
+                
+                if (linhasInvalidasCount > 0 && contatosImportadosCount > 0) {
+                    displayMessage(`${linhasInvalidasCount} linha(s) no arquivo estavam em um formato inválido e foram ignoradas.`, 'warning', 8000);
+                }
+                event.target.value = ''; // Clear file input after processing
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
