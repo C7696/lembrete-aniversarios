@@ -100,7 +100,7 @@
             <h2 class="text-2xl font-semibold text-primary border-b-2 border-primary pb-2 mb-6">Lista de Contatos</h2>
             <div class="bg-gray-50 p-4 rounded-lg mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div class="flex flex-wrap gap-2">
-                     <label for="importarCSV" class="btn-accent cursor-pointer font-bold py-2 px-4 rounded-lg transition shadow-md inline-flex items-center text-sm"><i class="fas fa-file-csv mr-2"></i>Importar</label>
+                    <label for="importarCSV" class="btn-accent cursor-pointer font-bold py-2 px-4 rounded-lg transition shadow-md inline-flex items-center text-sm"><i class="fas fa-file-csv mr-2"></i>Importar</label>
                     <input type="file" id="importarCSV" accept=".csv" onchange="importarDeCSV(event)" class="hidden">
                     <button onclick="exportarParaCSV()" class="btn-accent font-bold py-2 px-4 rounded-lg transition shadow-md inline-flex items-center text-sm"><i class="fas fa-file-export mr-2"></i>Exportar</button>
                     <button id="delete-selected-btn" onclick="showDeleteConfirmModal(null, true)" class="hidden bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition shadow-md inline-flex items-center text-sm"><i class="fas fa-trash-alt mr-2"></i>Excluir Selecionados</button>
@@ -336,20 +336,59 @@
                 document.getElementById('form-details').scrollIntoView();
             }
         }
+        
+        // --- FUNÇÃO CORRIGIDA ---
 
+        /**
+         * Detecta se o dispositivo é móvel.
+         * @returns {boolean} - True se for móvel, false caso contrário.
+         */
+        function isMobile() {
+            const regex = /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+            return regex.test(navigator.userAgent);
+        }
+
+        /**
+         * Envia uma mensagem de aniversário via WhatsApp, usando o link correto
+         * para o dispositivo (móvel ou desktop).
+         * @param {string} telefone - O número de telefone do contato.
+         * @param {string} nome - O nome do contato.
+         */
         function enviarWhatsApp(telefone, nome) {
             if (!telefone) {
                 displayMessage('Este contato não possui um número de telefone.', 'warning');
                 return;
             }
+            // Limpa o número, deixando apenas dígitos.
             let num = telefone.replace(/\D/g, '');
-            if (num.length >= 10 && num.length <= 11) num = '55' + num;
+            
+            // Adiciona o DDI 55 (Brasil) se o número tiver formato de celular com ou sem o 9º dígito (10 ou 11 dígitos).
+            if (num.length >= 10 && num.length <= 11) {
+                num = '55' + num;
+            }
+
+            // Validação final do número
             if (num.length < 12) {
                 displayMessage('Número de telefone inválido. Inclua o DDD.', 'error', 6000);
                 return;
             }
-            window.open(`https://wa.me/${num}?text=${encodeURIComponent(`Olá ${nome}, feliz aniversário! 🎉`)}`, '_blank');
+
+            const mensagem = encodeURIComponent(`Olá ${nome}, feliz aniversário! 🎉`);
+            let url;
+
+            if (isMobile()) {
+                // Em dispositivos móveis, `wa.me` é ideal pois abre o app.
+                url = `https://wa.me/${num}?text=${mensagem}`;
+            } else {
+                // Em desktops (como Linux), `web.whatsapp.com` é mais garantido, pois abre o WhatsApp Web.
+                url = `https://web.whatsapp.com/send?phone=${num}&text=${mensagem}`;
+            }
+            
+            window.open(url, '_blank');
         }
+
+        // --- FIM DA CORREÇÃO ---
+
 
         // --- LÓGICA DE EXCLUSÃO ---
         function showDeleteConfirmModal(id, isBulk = false) {
@@ -413,10 +452,6 @@
             }
         }
 
-        // --- LÓGICA DE NOTIFICAÇÃO ---
-        function verificarAniversarios() { /* ... Lógica existente ... */ }
-        function enviarNotificacao(contato) { /* ... Lógica existente ... */ }
-
         // --- IMPORTAÇÃO E EXPORTAÇÃO DE CSV ---
         function importarDeCSV(event) {
             const file = event.target.files[0];
@@ -473,11 +508,8 @@
             document.getElementById('nascimento').value = '';
             document.getElementById('contactId').value = '';
         }
-        function displayMessage(message, type = 'info', duration = 4000) { /* ... Lógica existente ... */ }
-        function updateNotificationStatus() { /* ... Lógica existente ... */ }
-        function pedirPermissaoNotificacao() { /* ... Lógica existente ... */ }
         
-        // --- CÓDIGO UTILITÁRIO MINIMIZADO (PARA NÃO REPETIR) ---
+        // --- CÓDIGO UTILITÁRIO MINIMIZADO E NOTIFICAÇÕES ---
         function displayMessage(message, type = 'info', duration = 4000) {const s=document.getElementById('notification-status'),c={success:'bg-green-100 text-green-800',error:'bg-red-100 text-red-800',warning:'bg-yellow-100 text-yellow-800',info:'bg-blue-100 text-blue-800'};s.className=`p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${c[type]||c.info}`;s.innerHTML=`<strong>${message}</strong>`;if(duration>0)setTimeout(()=>{if(s.innerHTML.includes(message))updateNotificationStatus()},duration)}
         function updateNotificationStatus() {const s=document.getElementById('notification-status');let t,e='',o='info';if(!('Notification'in window)){t="<strong>Status:</strong> Notificações não suportadas.";o='error'}else{switch(Notification.permission){case'granted':t='<strong>Status:</strong> Notificações Permitidas ✔️';o='success';break;case'denied':t='<strong>Status:</strong> Notificações Negadas ❌';e='<br><small>Permita nas configurações do navegador.</small>';o='error';break;default:t='<strong>Status:</strong> Aguardando sua permissão...';o='warning'}}const n={success:'bg-green-100 text-green-800',error:'bg-red-100 text-red-800',warning:'bg-yellow-100 text-yellow-800',info:'bg-blue-100 text-blue-800'};s.className=`p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${n[o]}`;s.innerHTML=t+e}
         function pedirPermissaoNotificacao(){if('Notification'in window&&Notification.permission==='default'){Notification.requestPermission().then(p=>{updateNotificationStatus();if(p==='granted')verificarAniversarios()})}}
