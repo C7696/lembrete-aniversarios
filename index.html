@@ -3,384 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lembrete de Aniversários</title>
+    <title>Lembrete de Aniversários com Firestore</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Estilos para uma aparência moderna e limpa */
+        /* Custom font and minor style adjustments */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-        :root {
-            --primary-color: #007bff;
-            --primary-hover: #0056b3;
-            --secondary-color: #6c757d;
-            --secondary-hover: #5a6268;
-            --danger-color: #dc3545;
-            --danger-hover: #c82333;
-            --light-bg: #f8f9fa;
-            --white-bg: #ffffff;
-            --text-color: #212529;
-            --border-color: #dee2e6;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --success-bg: #d4edda;
-            --success-text: #155724;
-            --danger-bg: #f8d7da;
-            --danger-text: #721c24;
-            --warning-bg: #fff3cd;
-            --warning-text: #856404;
-        }
-
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--light-bg);
-            color: var(--text-color);
-            margin: 0;
-            padding: 2rem;
-            display: flex;
-            justify-content: center;
         }
-
-        .container {
-            background-color: var(--white-bg);
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 700px;
-        }
-
-        h1, h2 {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 0.5rem;
-            margin-top: 0;
-        }
-
-        h2 {
-            margin-top: 2rem;
-        }
-        
-        #notification-status {
-            padding: 1rem;
-            margin-bottom: 2rem;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for status changes */
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-
-        input[type="text"], input[type="tel"], input[type="date"] {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
-
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
-
-        button, .file-label {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: background-color 0.2s ease-in-out, transform 0.1s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        button:hover, .file-label:hover {
-            background-color: var(--primary-hover);
-        }
-        
-        button:active, .file-label:active {
-            transform: scale(0.98);
-        }
-
-        button.secondary {
-            background-color: var(--secondary-color);
-        }
-        button.secondary:hover {
-            background-color: var(--secondary-hover);
-        }
-
-        button.danger {
-            background-color: var(--danger-color);
-        }
-
-        button.danger:hover {
-            background-color: var(--danger-hover);
-        }
-
-        #listaContatos {
-            list-style-type: none;
-            padding: 0;
-            margin-top: 1.5rem;
-        }
-
-        #listaContatos li {
-            background-color: var(--light-bg);
-            padding: 1rem;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            margin-bottom: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        #importarCSV {
-            display: none; /* Esconde o input de arquivo padrão */
+        /* Style for the custom modal */
+        .modal-backdrop {
+            transition: opacity 0.3s ease;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 flex items-start justify-center min-h-screen p-4 sm:p-6 lg:p-8">
 
-    <div class="container">
-        <h1>Lembrete de Aniversários</h1>
+    <div class="container bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-4xl mx-auto">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+            <h1 class="text-3xl font-bold text-blue-600">Lembrete de Aniversários</h1>
+            <div id="user-info" class="text-xs text-gray-500 mt-2 sm:mt-0">Carregando...</div>
+        </div>
+        
+        <div id="notification-status" role="status" aria-live="polite" class="p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300"></div>
 
-        <div id="notification-status" role="status" aria-live="polite"></div>
-
-        <div id="form-cadastro">
-            <h2>Adicionar / Editar Contato</h2>
-            <div class="form-grid">
+        <!-- Form Section -->
+        <div id="form-cadastro" class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 border-b-2 border-blue-500 pb-2 mb-6">Adicionar / Editar Contato</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="form-group">
-                    <label for="nome">Nome:</label>
-                    <input type="text" id="nome" placeholder="Nome completo da pessoa" required>
+                    <label for="nome" class="block mb-2 font-medium text-gray-700">Nome:</label>
+                    <input type="text" id="nome" placeholder="Nome completo" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                 </div>
                 <div class="form-group">
-                    <label for="telefone">Telefone:</label>
-                    <input type="tel" id="telefone" placeholder="(99) 99999-9999">
+                    <label for="telefone" class="block mb-2 font-medium text-gray-700">Telefone:</label>
+                    <input type="tel" id="telefone" placeholder="(99) 99999-9999" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                 </div>
                 <div class="form-group">
-                    <label for="nascimento">Data de Aniversário:</label>
-                    <input type="date" id="nascimento" required>
+                    <label for="nascimento" class="block mb-2 font-medium text-gray-700">Data de Aniversário:</label>
+                    <input type="date" id="nascimento" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                 </div>
             </div>
             <input type="hidden" id="contactId">
-            <div class="button-group">
-                <button onclick="salvarContato()">Salvar Contato</button>
-                <label for="importarCSV" class="file-label">Importar de CSV</label>
-                <input type="file" id="importarCSV" accept=".csv" onchange="importarDeCSV(event)">
-                <button class="secondary" onclick="testarNotificacao()">Testar Notificação</button>
+            <div class="flex flex-wrap gap-4 mt-6">
+                <button onclick="salvarContato()" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 active:scale-100 shadow-md">
+                    <i class="fas fa-save mr-2"></i>Salvar Contato
+                </button>
+                <label for="importarCSV" class="cursor-pointer bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105 active:scale-100 shadow-md inline-flex items-center">
+                    <i class="fas fa-file-csv mr-2"></i>Importar de CSV
+                </label>
+                <input type="file" id="importarCSV" accept=".csv" onchange="importarDeCSV(event)" class="hidden">
+                <button onclick="testarNotificacao()" class="bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 transition-transform transform hover:scale-105 active:scale-100 shadow-md">
+                    <i class="fas fa-bell mr-2"></i>Testar Notificação
+                </button>
             </div>
         </div>
 
+        <!-- Contacts List Section -->
         <div id="contatos">
-            <h2>Contatos Salvos</h2>
-            <ul id="listaContatos">
+            <h2 class="text-2xl font-semibold text-gray-800 border-b-2 border-blue-500 pb-2 mb-6">Contatos Salvos</h2>
+            <ul id="listaContatos" class="space-y-4">
+                <!-- Contacts will be rendered here by JavaScript -->
             </ul>
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            updateNotificationStatus();
-            pedirPermissaoNotificacao();
-            renderizarContatos();
-            // Check for birthdays immediately on load, and then set interval
-            verificarAniversarios();
-            setInterval(verificarAniversarios, 3600000); // Check every hour (3600000 milliseconds)
+    <!-- Custom Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden modal-backdrop" onclick="hideDeleteConfirmModal()">
+        <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md" onclick="event.stopPropagation()">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Confirmar Exclusão</h3>
+            <p class="text-gray-600 mb-6">Tem certeza que deseja excluir este contato? Esta ação não pode ser desfeita.</p>
+            <div class="flex justify-end gap-4">
+                <button onclick="hideDeleteConfirmModal()" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 transition">Cancelar</button>
+                <button id="confirm-delete-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, query, writeBatch, getDocs, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- CONFIGURATION ---
+        // These variables are provided by the environment.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        // --- GLOBAL STATE ---
+        let db, auth, userId;
+        let contactsUnsubscribe = null; // To store the listener unsubscribe function
+        let localContactsCache = []; // Local cache of contacts to avoid re-reading from Firestore unnecessarily
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                setupAuthListener();
+                updateNotificationStatus();
+                pedirPermissaoNotificacao();
+                
+                // Check for birthdays every hour
+                setInterval(verificarAniversarios, 3600000);
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                displayMessage("Falha ao conectar com o serviço. Tente recarregar a página.", "error", 0);
+            }
         });
 
-        // Constants for localStorage keys and messages
-        const STORAGE_KEY = 'contatosAniversario';
-        const NOTIFICATION_ICON_DEFAULT = 'https://placehold.co/128x128/007bff/white?text=🎁';
-        const NOTIFICATION_ICON_TEST = 'https://placehold.co/128x128/28a745/white?text=OK';
-
-        function displayMessage(message, type = 'info', duration = 3000) {
-            const statusEl = document.getElementById('notification-status');
-            let bgColor, textColor;
-
-            switch (type) {
-                case 'success':
-                    bgColor = 'var(--success-bg)';
-                    textColor = 'var(--success-text)';
-                    break;
-                case 'error':
-                    bgColor = 'var(--danger-bg)';
-                    textColor = 'var(--danger-text)';
-                    break;
-                case 'warning':
-                    bgColor = 'var(--warning-bg)';
-                    textColor = 'var(--warning-text)';
-                    break;
-                case 'info':
-                default:
-                    bgColor = 'var(--light-bg)';
-                    textColor = 'var(--text-color)';
-                    break;
-            }
-
-            statusEl.style.backgroundColor = bgColor;
-            statusEl.style.color = textColor;
-            statusEl.innerHTML = `<strong>${message}</strong>`;
-
-            if (duration > 0) {
-                setTimeout(() => updateNotificationStatus(), duration);
-            }
-        }
-
-        function updateNotificationStatus() {
-            const statusEl = document.getElementById('notification-status');
-            let statusText = '<strong>Status da Notificação:</strong> ';
-            let extraInfo = '';
-            let bgColor = 'var(--light-bg)';
-            let textColor = 'var(--text-color)';
-
-            if (!('Notification' in window)) {
-                statusText += 'Não suportado';
-                bgColor = 'var(--danger-bg)';
-                textColor = 'var(--danger-text)';
-            } else {
-                switch (Notification.permission) {
-                    case 'granted':
-                        statusText += 'Permitido ✔️';
-                        bgColor = 'var(--success-bg)';
-                        textColor = 'var(--success-text)';
-                        break;
-                    case 'denied':
-                        statusText += 'Negado ❌';
-                        bgColor = 'var(--danger-bg)';
-                        textColor = 'var(--danger-text)';
-                        extraInfo = '<br><small>Você precisa permitir nas configurações do seu navegador (no ícone de leão 🦁 ou cadeado 🔒) para receber avisos.</small>';
-                        break;
-                    default:
-                        statusText += 'Aguardando sua permissão...';
-                        bgColor = 'var(--warning-bg)';
-                        textColor = 'var(--warning-text)';
+        // --- AUTHENTICATION ---
+        function setupAuthListener() {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    // User is signed in.
+                    userId = user.uid;
+                    document.getElementById('user-info').innerHTML = `<strong>ID de Usuário:</strong> ${userId}`;
+                    setupContactsListener();
+                } else {
+                    // User is signed out, attempt to sign in.
+                    await authenticateUser();
                 }
-            }
-            statusEl.style.backgroundColor = bgColor;
-            statusEl.style.color = textColor;
-            statusEl.innerHTML = statusText + extraInfo;
+            });
         }
 
-        function pedirPermissaoNotificacao() {
-            if ('Notification' in window) {
-                if (Notification.permission === 'denied') {
-                    // Do not prompt if permission is already denied
-                    return;
+        async function authenticateUser() {
+             try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
                 }
-                Notification.requestPermission().then(permission => {
-                    updateNotificationStatus();
-                    if (permission === 'granted') {
-                        verificarAniversarios();
-                    }
-                });
-            } else {
-                updateNotificationStatus(); // Update status even if not supported
+            } catch (error) {
+                console.error("Authentication failed: ", error);
+                displayMessage("Falha na autenticação. Os dados não serão salvos.", "error", 0);
             }
         }
 
-        function testarNotificacao() {
-            if (!('Notification' in window)) {
-                displayMessage('Seu navegador não suporta notificações.', 'error');
-                return;
-            }
+        // --- FIRESTORE REAL-TIME LISTENER ---
+        function setupContactsListener() {
+            if (!userId) return;
+            if (contactsUnsubscribe) contactsUnsubscribe(); // Unsubscribe from previous listener if exists
 
-            if (Notification.permission === 'granted') {
-                new Notification('Teste de Notificação', {
-                    body: 'Se você vê esta mensagem, as notificações estão funcionando!',
-                    icon: NOTIFICATION_ICON_TEST,
-                    requireInteraction: true
-                });
-                displayMessage('Notificação de teste enviada!', 'success');
-            } else if (Notification.permission === 'denied') {
-                displayMessage('As notificações estão bloqueadas. Por favor, permita nas configurações do navegador (ícone de leão 🦁 ou cadeado 🔒).', 'warning', 6000);
-            } else {
-                displayMessage('Por favor, permita as notificações quando o navegador solicitar.', 'info');
-                pedirPermissaoNotificacao();
-            }
+            const contactsCollection = collection(db, 'artifacts', appId, 'users', userId, 'contacts');
+            const q = query(contactsCollection); // In future, you could add orderBy here if you create the index
+
+            contactsUnsubscribe = onSnapshot(q, (snapshot) => {
+                const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                contacts.sort((a, b) => a.nome.localeCompare(b.nome)); // Sort locally
+                localContactsCache = contacts; // Update local cache
+                renderizarContatos(contacts);
+                verificarAniversarios(); // Check birthdays on initial load/update
+            }, (error) => {
+                console.error("Error listening to contacts:", error);
+                displayMessage("Erro ao carregar contatos.", "error");
+            });
         }
 
-        function getContatos() {
-            return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-        }
-
-        function salvarListaContatos(contatos) {
-            contatos.sort((a, b) => a.nome.localeCompare(b.nome));
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(contatos));
-        }
-
-        function salvarContato() {
-            const nome = document.getElementById('nome').value.trim();
-            const telefone = document.getElementById('telefone').value.trim();
-            const nascimento = document.getElementById('nascimento').value; // YYYY-MM-DD format
-            const contactId = document.getElementById('contactId').value;
-
-            if (!nome || !nascimento) {
-                displayMessage('Por favor, preencha o nome e a data de aniversário.', 'error');
-                return;
-            }
-
-            let contatos = getContatos();
-
-            if (contactId) {
-                const contatoIndex = contatos.findIndex(c => c.id == contactId);
-                if (contatoIndex > -1) {
-                    contatos[contatoIndex] = { ...contatos[contatoIndex], nome, telefone, nascimento };
-                    displayMessage('Contato atualizado com sucesso!', 'success');
-                }
-            } else {
-                const novoContato = {
-                    id: Date.now(), // Unique ID for new contacts
-                    nome,
-                    telefone,
-                    nascimento
-                };
-                contatos.push(novoContato);
-                displayMessage('Contato adicionado com sucesso!', 'success');
-            }
-
-            salvarListaContatos(contatos);
-            limparFormulario();
-            renderizarContatos();
-            verificarAniversarios(); // Re-check birthdays after saving/updating
-        }
-        
-        function limparFormulario() {
-            document.getElementById('nome').value = '';
-            document.getElementById('telefone').value = '';
-            document.getElementById('nascimento').value = '';
-            document.getElementById('contactId').value = '';
-        }
-
-        function renderizarContatos() {
-            const contatos = getContatos();
+        // --- UI RENDERING ---
+        window.renderizarContatos = (contatos) => {
             const listaElemento = document.getElementById('listaContatos');
-            listaElemento.innerHTML = ''; 
+            listaElemento.innerHTML = '';
 
             if (contatos.length === 0) {
-                listaElemento.innerHTML = '<li>Nenhum contato salvo ainda.</li>';
+                listaElemento.innerHTML = '<li class="text-center text-gray-500 p-4 bg-gray-50 rounded-lg">Nenhum contato salvo ainda.</li>';
                 return;
             }
 
@@ -388,153 +181,288 @@
                 const [ano, mes, dia] = contato.nascimento.split('-');
                 const dataFormatada = `${dia}/${mes}/${ano}`;
                 const item = document.createElement('li');
+                item.className = 'bg-gray-50 p-4 border border-gray-200 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4';
                 item.innerHTML = `
                     <div>
-                        <strong>${contato.nome}</strong><br>
-                        <small>Telefone: ${contato.telefone || 'Não informado'} | Aniversário: ${dataFormatada}</small>
+                        <strong class="text-lg text-gray-800">${contato.nome}</strong>
+                        <p class="text-sm text-gray-600">
+                            <i class="fas fa-phone-alt text-gray-400 mr-1"></i> ${contato.telefone || 'Não informado'} | 
+                            <i class="fas fa-birthday-cake text-gray-400 ml-2 mr-1"></i> ${dataFormatada}
+                        </p>
                     </div>
-                    <div class="button-group">
-                        <button onclick="editarContato(${contato.id})">Editar</button>
-                        <button class="danger" onclick="excluirContato(${contato.id})">Excluir</button>
+                    <div class="flex-shrink-0 flex gap-2">
+                        <button onclick="editarContato('${contato.id}')" class="bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition text-sm">Editar</button>
+                        <button onclick="showDeleteConfirmModal('${contato.id}')" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition text-sm">Excluir</button>
                     </div>
                 `;
                 listaElemento.appendChild(item);
             });
         }
-        
-        function editarContato(id) {
-            const contatos = getContatos();
-            const contato = contatos.find(c => c.id === id);
+
+        // --- CRUD OPERATIONS ---
+        window.salvarContato = async () => {
+            if (!userId) {
+                displayMessage("Usuário não autenticado. Não é possível salvar.", "error");
+                return;
+            }
+
+            const nome = document.getElementById('nome').value.trim();
+            const telefone = document.getElementById('telefone').value.trim();
+            const nascimento = document.getElementById('nascimento').value;
+            const contactId = document.getElementById('contactId').value;
+
+            if (!nome || !nascimento) {
+                displayMessage('Por favor, preencha o nome e a data de aniversário.', 'error');
+                return;
+            }
+
+            const contactData = { nome, telefone, nascimento };
+            const contactsCollection = collection(db, 'artifacts', appId, 'users', userId, 'contacts');
+
+            try {
+                if (contactId) {
+                    // Update existing contact
+                    const contactDocRef = doc(contactsCollection, contactId);
+                    await setDoc(contactDocRef, contactData, { merge: true });
+                    displayMessage('Contato atualizado com sucesso!', 'success');
+                } else {
+                    // Add new contact
+                    // Add lastNotifiedYear to prevent notification on the same day of creation
+                    contactData.lastNotifiedYear = new Date().getFullYear();
+                    await addDoc(contactsCollection, contactData);
+                    displayMessage('Contato adicionado com sucesso!', 'success');
+                }
+                limparFormulario();
+            } catch (error) {
+                console.error("Error saving contact: ", error);
+                displayMessage("Erro ao salvar o contato.", "error");
+            }
+        };
+
+        window.editarContato = (id) => {
+            const contato = localContactsCache.find(c => c.id === id);
             if (contato) {
                 document.getElementById('contactId').value = contato.id;
                 document.getElementById('nome').value = contato.nome;
                 document.getElementById('telefone').value = contato.telefone;
                 document.getElementById('nascimento').value = contato.nascimento;
-                window.scrollTo(0, 0); // Scroll to top to show the form
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        };
+        
+        // --- DELETE MODAL LOGIC ---
+        window.showDeleteConfirmModal = (id) => {
+            const modal = document.getElementById('delete-modal');
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            modal.classList.remove('hidden');
+            modal.style.opacity = 0;
+            setTimeout(() => modal.style.opacity = 1, 10); // Fade in
+            
+            // Clone and replace the button to remove old event listeners
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            
+            newConfirmBtn.onclick = () => excluirContato(id);
+        };
+
+        window.hideDeleteConfirmModal = () => {
+            const modal = document.getElementById('delete-modal');
+            modal.style.opacity = 0;
+            setTimeout(() => modal.classList.add('hidden'), 300); // Fade out
+        };
+        
+        async function excluirContato(id) {
+            if (!userId) return;
+            try {
+                const contactDocRef = doc(db, 'artifacts', appId, 'users', userId, 'contacts', id);
+                await deleteDoc(contactDocRef);
+                displayMessage('Contato excluído com sucesso!', 'success');
+                hideDeleteConfirmModal();
+            } catch (error) {
+                console.error("Error deleting contact: ", error);
+                displayMessage("Erro ao excluir o contato.", "error");
+                hideDeleteConfirmModal();
             }
         }
 
-        function excluirContato(id) {
-            if (!confirm('Tem certeza que deseja excluir este contato?')) {
+        // --- NOTIFICATION LOGIC ---
+        window.verificarAniversarios = async () => {
+            if (Notification.permission !== 'granted' || !userId) {
                 return;
             }
-            let contatos = getContatos();
-            contatos = contatos.filter(contato => contato.id !== id);
-            salvarListaContatos(contatos);
-            renderizarContatos();
-            displayMessage('Contato excluído com sucesso!', 'info');
-        }
-
-        function verificarAniversarios() {
-            if (Notification.permission !== 'granted') {
-                return; 
-            }
             
-            console.log('Verificando aniversariantes do dia...');
-            const contatos = getContatos();
             const hoje = new Date();
             const diaHoje = hoje.getDate();
-            const mesHoje = hoje.getMonth() + 1; // getMonth() is 0-indexed
+            const mesHoje = hoje.getMonth() + 1;
+            const anoHoje = hoje.getFullYear();
 
-            contatos.forEach(contato => {
-                // Robust parsing of birthday date
+            const aniversariantes = localContactsCache.filter(contato => {
                 const [anoNasc, mesNascStr, diaNascStr] = contato.nascimento.split('-');
                 const diaNasc = parseInt(diaNascStr, 10);
-                const mesNasc = parseInt(mesNascStr, 10); // From YYYY-MM-DD, month is 1-indexed
-
-                if (diaHoje === diaNasc && mesHoje === mesNasc) {
-                    // Prevent duplicate notifications for the same birthday on the same day
-                    // A more advanced solution would track sent notifications per day
-                    const lastNotifiedKey = `lastNotified_${contato.id}_${diaHoje}_${mesHoje}`;
-                    if (!sessionStorage.getItem(lastNotifiedKey)) {
-                        enviarNotificacao(contato.nome);
-                        sessionStorage.setItem(lastNotifiedKey, 'true'); // Mark as notified for today
-                    }
-                }
+                const mesNasc = parseInt(mesNascStr, 10);
+                return diaHoje === diaNasc && mesHoje === mesNasc && contato.lastNotifiedYear !== anoHoje;
             });
-        }
+
+            if (aniversariantes.length > 0) {
+                const batch = writeBatch(db);
+                aniversariantes.forEach(contato => {
+                    enviarNotificacao(contato.nome);
+                    const contactDocRef = doc(db, 'artifacts', appId, 'users', userId, 'contacts', contato.id);
+                    batch.update(contactDocRef, { lastNotifiedYear: anoHoje });
+                });
+                await batch.commit(); // Update all contacts at once
+            }
+        };
 
         function enviarNotificacao(nome) {
             const options = {
                 body: `Hoje é o aniversário de ${nome}! Não se esqueça de parabenizá-lo(a).`,
-                icon: NOTIFICATION_ICON_DEFAULT,
+                icon: 'https://placehold.co/128x128/007bff/white?text=🎁',
                 vibrate: [200, 100, 200],
-                requireInteraction: true 
+                requireInteraction: true
             };
             new Notification('🎉 Lembrete de Aniversário! 🎉', options);
         }
 
-        function importarDeCSV(event) {
+        // --- CSV IMPORT ---
+        window.importarDeCSV = (event) => {
+            if (!userId) {
+                displayMessage("Faça login para importar contatos.", "error");
+                return;
+            }
             const file = event.target.files[0];
             if (!file) return;
 
-            // Basic file type check for CSV
-            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
-                displayMessage('Por favor, selecione um arquivo CSV válido (.csv).', 'error');
-                event.target.value = ''; // Clear file input
-                return;
-            }
-
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async (e) => {
                 const text = e.target.result;
                 const linhas = text.split('\n').filter(linha => linha.trim() !== '');
-                const contatosAtuais = getContatos();
+                const batch = writeBatch(db);
                 let contatosImportadosCount = 0;
-                let linhasInvalidasCount = 0;
+                const contactsCollection = collection(db, 'artifacts', appId, 'users', userId, 'contacts');
 
                 linhas.forEach(linha => {
-                    // Robust parsing: split by comma, then trim each part
                     const partes = linha.split(',').map(part => part.trim());
-                    
-                    if (partes.length < 2) { // Minimum: name and birthdate (YYYY-MM-DD)
-                        linhasInvalidasCount++;
-                        return;
-                    }
+                    if (partes.length < 2) return;
 
                     const nome = partes[0];
-                    // Assume birthdate is the last part
-                    const nascimento = partes[partes.length - 1]; 
-                    // Join middle parts for phone, if any (handles commas in phone numbers if desired)
-                    const telefone = partes.length > 2 ? partes.slice(1, partes.length - 1).join(',') : '';
+                    const nascimento = partes[partes.length - 1];
+                    const telefone = partes.length > 2 ? partes.slice(1, -1).join(',') : '';
 
                     if (nome && nascimento && /^\d{4}-\d{2}-\d{2}$/.test(nascimento)) {
-                        const novoContato = {
-                            id: Date.now() + Math.random(), // Add random for better uniqueness on import
-                            nome: nome,
-                            telefone: telefone,
-                            nascimento: nascimento
-                        };
-                        // Prevent adding duplicate contacts (based on name and birthdate)
-                        const isDuplicate = contatosAtuais.some(
-                            c => c.nome === novoContato.nome && c.nascimento === novoContato.nascimento
-                        );
+                        const isDuplicate = localContactsCache.some(c => c.nome === nome && c.nascimento === nascimento);
                         if (!isDuplicate) {
-                            contatosAtuais.push(novoContato);
+                            const newContactRef = doc(contactsCollection); // Create a new doc reference
+                            batch.set(newContactRef, { nome, telefone, nascimento, lastNotifiedYear: new Date().getFullYear() });
                             contatosImportadosCount++;
                         }
-                    } else {
-                        linhasInvalidasCount++;
                     }
                 });
 
                 if (contatosImportadosCount > 0) {
-                    salvarListaContatos(contatosAtuais);
-                    renderizarContatos();
-                    displayMessage(`${contatosImportadosCount} contatos importados com sucesso!`, 'success');
-                } else if (linhasInvalidasCount === linhas.length) {
-                    displayMessage('Nenhum contato válido foi encontrado no arquivo. Verifique o formato: Nome,Telefone,AAAA-MM-DD', 'error', 8000);
+                    try {
+                        await batch.commit();
+                        displayMessage(`${contatosImportadosCount} contatos importados com sucesso!`, 'success');
+                    } catch (error) {
+                        console.error("Error importing from CSV: ", error);
+                        displayMessage("Erro ao importar contatos.", "error");
+                    }
                 } else {
-                    displayMessage('Nenhum contato novo foi importado. Podem ser duplicatas ou formatos inválidos.', 'warning', 6000);
+                    displayMessage('Nenhum contato novo foi importado (podem ser duplicatas).', 'warning');
                 }
-                
-                if (linhasInvalidasCount > 0 && contatosImportadosCount > 0) {
-                    displayMessage(`${linhasInvalidasCount} linha(s) no arquivo estavam em um formato inválido e foram ignoradas.`, 'warning', 8000);
-                }
-                event.target.value = ''; // Clear file input after processing
+                event.target.value = ''; // Clear file input
             };
             reader.readAsText(file);
+        };
+
+        // --- UTILITY FUNCTIONS ---
+        function limparFormulario() {
+            document.getElementById('nome').value = '';
+            document.getElementById('telefone').value = '';
+            document.getElementById('nascimento').value = '';
+            document.getElementById('contactId').value = '';
         }
+
+        function displayMessage(message, type = 'info', duration = 4000) {
+            const statusEl = document.getElementById('notification-status');
+            const typeClasses = {
+                success: 'bg-green-100 text-green-800',
+                error: 'bg-red-100 text-red-800',
+                warning: 'bg-yellow-100 text-yellow-800',
+                info: 'bg-blue-100 text-blue-800',
+            };
+            statusEl.className = `p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${typeClasses[type] || typeClasses['info']}`;
+            statusEl.innerHTML = `<strong>${message}</strong>`;
+
+            if (duration > 0) {
+                setTimeout(() => {
+                    statusEl.className = 'p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300';
+                    statusEl.innerHTML = '';
+                    updateNotificationStatus();
+                }, duration);
+            }
+        }
+        
+        function updateNotificationStatus() {
+            const statusEl = document.getElementById('notification-status');
+            if (statusEl.textContent.includes('importado') || statusEl.textContent.includes('salvo')) return;
+
+            let statusText, extraInfo = '', type = 'info';
+            
+            if (!('Notification' in window)) {
+                statusText = '<strong>Status da Notificação:</strong> Não suportado';
+                type = 'error';
+            } else {
+                switch (Notification.permission) {
+                    case 'granted':
+                        statusText = '<strong>Status da Notificação:</strong> Permitido ✔️';
+                        type = 'success';
+                        break;
+                    case 'denied':
+                        statusText = '<strong>Status da Notificação:</strong> Negado ❌';
+                        extraInfo = '<br><small>Permita nas configurações do seu navegador para receber avisos.</small>';
+                        type = 'error';
+                        break;
+                    default:
+                        statusText = '<strong>Status da Notificação:</strong> Aguardando sua permissão...';
+                        type = 'warning';
+                }
+            }
+            
+            const typeClasses = {
+                success: 'bg-green-100 text-green-800',
+                error: 'bg-red-100 text-red-800',
+                warning: 'bg-yellow-100 text-yellow-800',
+                info: 'bg-blue-100 text-blue-800',
+            };
+            statusEl.className = `p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${typeClasses[type]}`;
+            statusEl.innerHTML = statusText + extraInfo;
+        }
+
+        function pedirPermissaoNotificacao() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    updateNotificationStatus();
+                    if (permission === 'granted') {
+                        verificarAniversarios();
+                    }
+                });
+            }
+        }
+
+        window.testarNotificacao = () => {
+            if (Notification.permission === 'granted') {
+                new Notification('Teste de Notificação', {
+                    body: 'Se você vê esta mensagem, as notificações estão funcionando!',
+                    icon: 'https://placehold.co/128x128/28a745/white?text=OK',
+                });
+                displayMessage('Notificação de teste enviada!', 'success');
+            } else {
+                displayMessage('Por favor, permita as notificações para testar.', 'warning');
+                pedirPermissaoNotificacao();
+            }
+        };
+
     </script>
 </body>
 </html>
