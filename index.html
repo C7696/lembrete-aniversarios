@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lembrete de Aniversários (Versão Sofisticada)</title>
+    <title>Lembrete de Aniversários com Login</title>
     <!-- Tailwind CSS para um design moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome para ícones -->
@@ -50,11 +50,38 @@
         .border-primary { border-color: var(--cor-primaria); }
     </style>
 </head>
-<body class="flex items-start justify-center min-h-screen p-4 sm:p-6 lg:p-8">
+<body class="flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
 
-    <div class="container bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-5xl mx-auto">
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="w-full max-w-md mx-auto">
+        <div class="bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-primary text-center mb-2">Bem-vindo!</h2>
+            <p class="text-center text-gray-500 mb-8">Faça login com um usuário pré-definido.</p>
+            <div id="login-message" class="p-3 mb-4 rounded-lg text-center font-semibold text-sm transition-all duration-300 hidden"></div>
+            <div class="space-y-4">
+                <div>
+                    <label for="username" class="block mb-2 font-medium text-gray-700">Usuário:</label>
+                    <input type="text" id="username" placeholder="Digite seu nome de usuário" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 transition">
+                </div>
+                <div>
+                    <label for="password" class="block mb-2 font-medium text-gray-700">Senha:</label>
+                    <input type="password" id="password" placeholder="Digite sua senha" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 transition">
+                </div>
+            </div>
+            <div class="flex mt-8">
+                <button onclick="handleLogin()" class="w-full btn-primary font-bold py-3 px-6 rounded-lg transition shadow-md"><i class="fas fa-sign-in-alt mr-2"></i>Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA PRINCIPAL DA APLICAÇÃO (escondida por padrão) -->
+    <div id="app-screen" class="container bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-5xl mx-auto hidden">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
-            <h1 class="text-3xl font-bold text-primary">Lembrete de Aniversários</h1>
+            <div>
+                <h1 class="text-3xl font-bold text-primary">Lembrete de Aniversários</h1>
+                <p id="welcome-user" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+            <button onclick="handleLogout()" class="mt-4 sm:mt-0 bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition shadow-md inline-flex items-center text-sm"><i class="fas fa-sign-out-alt mr-2"></i>Sair</button>
         </header>
         
         <div id="notification-status" role="status" aria-live="polite" class="p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300"></div>
@@ -118,20 +145,38 @@
 
     <script>
         // --- CONFIGURAÇÃO ---
-        const STORAGE_KEY = 'contatosAniversario';
+        const USERS_STORAGE_KEY = 'aniversario_app_users';
+        const SESSION_KEY = 'aniversario_app_session';
         const ITEMS_PER_PAGE = 25;
         let currentPage = 1;
         let selectedContacts = new Set();
+        let currentUser = null;
+        
+        // --- CONFIGURAÇÃO MANUAL DE USUÁRIOS ---
+        // Para adicionar/definir usuários, você pode usar o console do navegador (F12).
+        // Copie e cole o comando abaixo no console, edite com seus usuários e pressione Enter.
+        // Faça isso apenas uma vez.
+        //
+        // localStorage.setItem('aniversario_app_users', JSON.stringify({ 'admin': 'admin123', 'usuario1': 'senha123' }));
+        //
+        // O comando acima define dois usuários: 'admin' (senha: 'admin123') e 'usuario1' (senha: 'senha123').
 
         // --- INICIALIZAÇÃO ---
         document.addEventListener('DOMContentLoaded', () => {
+            checkSession();
+            // Adiciona listeners para a tecla Enter nos campos de login
+            document.getElementById('username').addEventListener('keyup', (e) => { if (e.key === 'Enter') handleLogin(); });
+            document.getElementById('password').addEventListener('keyup', (e) => { if (e.key === 'Enter') handleLogin(); });
+        });
+
+        function initializeApp() {
             setupEventListeners();
             updateNotificationStatus();
             pedirPermissaoNotificacao();
             render();
             verificarAniversarios();
             setInterval(verificarAniversarios, 3600000); 
-        });
+        }
 
         function setupEventListeners() {
             document.getElementById('search-input').addEventListener('input', () => {
@@ -140,18 +185,79 @@
             });
         }
 
-        // --- FUNÇÕES DE DADOS ---
+        // --- LÓGICA DE LOGIN E SESSÃO ---
+        function showLoginMessage(message, type = 'error') {
+            const el = document.getElementById('login-message');
+            const colors = { success: 'bg-green-100 text-green-800', error: 'bg-red-100 text-red-800' };
+            el.textContent = message;
+            el.className = `p-3 mb-4 rounded-lg text-center font-semibold text-sm transition-all duration-300 ${colors[type]}`;
+            el.classList.remove('hidden');
+        }
+
+        function handleLogin() {
+            const username = document.getElementById('username').value.trim().toLowerCase();
+            const password = document.getElementById('password').value.trim();
+            if (!username || !password) {
+                showLoginMessage('Usuário e senha são obrigatórios.');
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY)) || {};
+            if (users[username] && users[username] === password) {
+                currentUser = username;
+                localStorage.setItem(SESSION_KEY, currentUser);
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                document.getElementById('welcome-user').textContent = `Olá, ${currentUser}!`;
+                initializeApp();
+            } else {
+                showLoginMessage('Usuário ou senha inválidos.');
+            }
+        }
+        
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem(SESSION_KEY);
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            // Limpa campos para segurança
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('login-message').classList.add('hidden');
+        }
+
+        function checkSession() {
+            const loggedInUser = localStorage.getItem(SESSION_KEY);
+            if (loggedInUser) {
+                currentUser = loggedInUser;
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                document.getElementById('welcome-user').textContent = `Olá, ${currentUser}!`;
+                initializeApp();
+            }
+        }
+
+        // --- FUNÇÕES DE DADOS (ADAPTADAS PARA MULTI-USUÁRIO) ---
+        function getUserContactsKey() {
+            if (!currentUser) return null;
+            return `aniversario_contacts_${currentUser}`;
+        }
+
         function getContatos() {
+            const key = getUserContactsKey();
+            if (!key) return [];
             try {
-                return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+                return JSON.parse(localStorage.getItem(key)) || [];
             } catch (error) {
                 console.error("Erro ao ler contatos do localStorage:", error);
                 return [];
             }
         }
         function salvarListaContatos(contatos) {
+            const key = getUserContactsKey();
+            if (!key) return;
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(contatos));
+                localStorage.setItem(key, JSON.stringify(contatos));
             } catch (error) {
                 console.error("Erro ao salvar contatos no localStorage:", error);
                 displayMessage('Erro ao salvar os dados.', 'error');
@@ -178,19 +284,17 @@
                 const daysUntil = getDaysUntilNextBirthday(contato.nascimento);
                 if (daysUntil === 0) {
                     today.push(contato);
-                } else if (daysUntil <= 7) {
+                } else if (daysUntil > 0 && daysUntil <= 7) {
                     upcoming.push({ ...contato, daysUntil });
                 }
             });
             
-            // Renderiza aniversariantes de hoje
             if (today.length > 0) {
                 today.forEach(c => todayContainer.appendChild(createDashboardItem(c)));
             } else {
                 todayContainer.innerHTML = '<p class="text-sm text-gray-500">Nenhum aniversário hoje.</p>';
             }
 
-            // Renderiza próximos aniversários
             if (upcoming.length > 0) {
                 upcoming.sort((a,b) => a.daysUntil - b.daysUntil);
                 upcoming.forEach(c => upcomingContainer.appendChild(createDashboardItem(c, true)));
@@ -229,14 +333,14 @@
             if (searchTerm) {
                 contatos = contatos.filter(c => c.nome.toLowerCase().includes(searchTerm) || (c.telefone && c.telefone.includes(searchTerm)));
             }
-            contatos.sort((a, b) => a.nome.localeCompare(b.nome));
+            contatos.sort((a, b) => getDaysUntilNextBirthday(a.nascimento) - getDaysUntilNextBirthday(b.nascimento));
 
             const totalItems = contatos.length;
             const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
             const paginatedContatos = contatos.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
             if (paginatedContatos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-6">Nenhum contato encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-6">Nenhum contato encontrado. Adicione um novo!</td></tr>`;
             } else {
                 paginatedContatos.forEach(contato => tbody.appendChild(createContactRow(contato)));
             }
@@ -272,7 +376,6 @@
                 return;
             }
             let buttons = '';
-            // Lógica para mostrar um número limitado de botões de página
             const maxButtons = 5;
             let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
             let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -337,58 +440,28 @@
             }
         }
         
-        // --- FUNÇÃO CORRIGIDA ---
-
-        /**
-         * Detecta se o dispositivo é móvel.
-         * @returns {boolean} - True se for móvel, false caso contrário.
-         */
         function isMobile() {
             const regex = /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
             return regex.test(navigator.userAgent);
         }
 
-        /**
-         * Envia uma mensagem de aniversário via WhatsApp, usando o link correto
-         * para o dispositivo (móvel ou desktop).
-         * @param {string} telefone - O número de telefone do contato.
-         * @param {string} nome - O nome do contato.
-         */
         function enviarWhatsApp(telefone, nome) {
             if (!telefone) {
                 displayMessage('Este contato não possui um número de telefone.', 'warning');
                 return;
             }
-            // Limpa o número, deixando apenas dígitos.
             let num = telefone.replace(/\D/g, '');
-            
-            // Adiciona o DDI 55 (Brasil) se o número tiver formato de celular com ou sem o 9º dígito (10 ou 11 dígitos).
             if (num.length >= 10 && num.length <= 11) {
                 num = '55' + num;
             }
-
-            // Validação final do número
             if (num.length < 12) {
                 displayMessage('Número de telefone inválido. Inclua o DDD.', 'error', 6000);
                 return;
             }
-
             const mensagem = encodeURIComponent(`Olá ${nome}, feliz aniversário! 🎉`);
-            let url;
-
-            if (isMobile()) {
-                // Em dispositivos móveis, `wa.me` é ideal pois abre o app.
-                url = `https://wa.me/${num}?text=${mensagem}`;
-            } else {
-                // Em desktops (como Linux), `web.whatsapp.com` é mais garantido, pois abre o WhatsApp Web.
-                url = `https://web.whatsapp.com/send?phone=${num}&text=${mensagem}`;
-            }
-            
+            let url = isMobile() ? `https://wa.me/${num}?text=${mensagem}` : `https://web.whatsapp.com/send?phone=${num}&text=${mensagem}`;
             window.open(url, '_blank');
         }
-
-        // --- FIM DA CORREÇÃO ---
-
 
         // --- LÓGICA DE EXCLUSÃO ---
         function showDeleteConfirmModal(id, isBulk = false) {
@@ -397,6 +470,7 @@
             const textEl = document.getElementById('delete-modal-text');
             const confirmBtn = document.getElementById('confirm-delete-btn');
             if (isBulk) {
+                if (selectedContacts.size === 0) return;
                 titleEl.textContent = 'Confirmar Exclusão em Massa';
                 textEl.textContent = `Tem certeza que deseja excluir os ${selectedContacts.size} contatos selecionados?`;
                 confirmBtn.onclick = () => deleteSelectedContacts();
@@ -488,13 +562,14 @@
             const csv = 'data:text/csv;charset=utf-8,' + encodeURIComponent('Nome,Telefone,Nascimento\n' + contatos.map(c => `${c.nome},${c.telefone || ''},${c.nascimento}`).join('\n'));
             const link = document.createElement('a');
             link.setAttribute('href', csv);
-            link.setAttribute('download', 'contatos_aniversarios.csv');
+            link.setAttribute('download', `contatos_${currentUser}.csv`);
             link.click();
             link.remove();
         }
 
         // --- FUNÇÕES UTILITÁRIAS ---
         function getDaysUntilNextBirthday(nascimento) {
+            if (!nascimento) return 9999;
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
             const [ano, mes, dia] = nascimento.split('-').map(Number);
@@ -513,7 +588,7 @@
         function displayMessage(message, type = 'info', duration = 4000) {const s=document.getElementById('notification-status'),c={success:'bg-green-100 text-green-800',error:'bg-red-100 text-red-800',warning:'bg-yellow-100 text-yellow-800',info:'bg-blue-100 text-blue-800'};s.className=`p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${c[type]||c.info}`;s.innerHTML=`<strong>${message}</strong>`;if(duration>0)setTimeout(()=>{if(s.innerHTML.includes(message))updateNotificationStatus()},duration)}
         function updateNotificationStatus() {const s=document.getElementById('notification-status');let t,e='',o='info';if(!('Notification'in window)){t="<strong>Status:</strong> Notificações não suportadas.";o='error'}else{switch(Notification.permission){case'granted':t='<strong>Status:</strong> Notificações Permitidas ✔️';o='success';break;case'denied':t='<strong>Status:</strong> Notificações Negadas ❌';e='<br><small>Permita nas configurações do navegador.</small>';o='error';break;default:t='<strong>Status:</strong> Aguardando sua permissão...';o='warning'}}const n={success:'bg-green-100 text-green-800',error:'bg-red-100 text-red-800',warning:'bg-yellow-100 text-yellow-800',info:'bg-blue-100 text-blue-800'};s.className=`p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${n[o]}`;s.innerHTML=t+e}
         function pedirPermissaoNotificacao(){if('Notification'in window&&Notification.permission==='default'){Notification.requestPermission().then(p=>{updateNotificationStatus();if(p==='granted')verificarAniversarios()})}}
-        function verificarAniversarios(){if(Notification.permission!=='granted')return;const t=new Date(),d=t.getDate(),m=t.getMonth()+1,y=t.getFullYear();let c=getContatos(),u=!1;c.forEach(co=>{const[,M,D]=co.nascimento.split('-');if(parseInt(D,10)===d&&parseInt(M,10)===m&&co.lastNotifiedYear!==y){enviarNotificacao(co);co.lastNotifiedYear=y;u=!0}});if(u)salvarListaContatos(c)}
+        function verificarAniversarios(){if(Notification.permission!=='granted' || !currentUser)return;const t=new Date(),d=t.getDate(),m=t.getMonth()+1,y=t.getFullYear();let c=getContatos(),u=!1;c.forEach(co=>{const[,M,D]=co.nascimento.split('-');if(parseInt(D,10)===d&&parseInt(M,10)===m&&co.lastNotifiedYear!==y){enviarNotificacao(co);co.lastNotifiedYear=y;u=!0}});if(u)salvarListaContatos(c)}
         function enviarNotificacao(c){const o={body:`Hoje é o aniversário de ${c.nome}! Clique para enviar uma mensagem.`,icon:'https://placehold.co/128x128/D69E2E/white?text=🎁',vibrate:[200,100,200],requireInteraction:!0};const n=new Notification('🎉 Lembrete de Aniversário! 🎉',o);n.onclick=e=>{e.preventDefault();if(c.telefone)enviarWhatsApp(c.telefone,c.nome);n.close()}}
     </script>
 </body>
