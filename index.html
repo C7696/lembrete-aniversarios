@@ -3,48 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lembrete de Aniversários com Login</title>
-    <!-- Tailwind CSS para um design moderno -->
+    <title>Lembrete de Aniversários com Firebase</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome para ícones -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Fonte customizada e paleta de cores de luxo */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7fafc; /* bg-gray-50 */
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #f7fafc; }
         :root {
-            --cor-primaria: #2d3748; /* cinza-chumbo-800 */
-            --cor-acento: #D69E2E;   /* dourado-queimado-600 */
-            --cor-acento-hover: #B8860B; /* dourado-queimado-700 */
-            --cor-perigo: #d9534f;
+            --cor-primaria: #2d3748; --cor-acento: #D69E2E;
+            --cor-acento-hover: #B8860B; --cor-perigo: #d9534f;
         }
         .modal-backdrop { transition: opacity 0.3s ease; }
         :root { scrollbar-gutter: stable; }
         summary::-webkit-details-marker { display: none; }
-        
-        .action-icon {
-            cursor: pointer;
-            color: #718096; /* text-gray-500 */
-            transition: color 0.2s;
-        }
+        .action-icon { cursor: pointer; color: #718096; transition: color 0.2s; }
         .action-icon-accent:hover { color: var(--cor-acento); }
         .action-icon-delete:hover { color: var(--cor-perigo); }
-
-        .btn-primary {
-            background-color: var(--cor-primaria);
-            color: white;
-        }
+        .btn-primary { background-color: var(--cor-primaria); color: white; }
         .btn-primary:hover { background-color: #1a202c; }
-
-        .btn-accent {
-            background-color: var(--cor-acento);
-            color: white;
-        }
+        .btn-accent { background-color: var(--cor-acento); color: white; }
         .btn-accent:hover { background-color: var(--cor-acento-hover); }
-
         .text-primary { color: var(--cor-primaria); }
         .text-accent { color: var(--cor-acento); }
         .border-primary { border-color: var(--cor-primaria); }
@@ -53,10 +33,10 @@
 <body class="flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
 
     <!-- TELA DE LOGIN -->
-    <div id="login-screen" class="w-full max-w-md mx-auto">
+    <div id="login-screen" class="w-full max-w-md mx-auto hidden">
         <div class="bg-white p-8 rounded-2xl shadow-lg">
             <h2 class="text-3xl font-bold text-primary text-center mb-2">Bem-vindo!</h2>
-            <p class="text-center text-gray-500 mb-8">Faça login com um usuário pré-definido.</p>
+            <p class="text-center text-gray-500 mb-8">Faça login para acessar seus contatos.</p>
             <div id="login-message" class="p-3 mb-4 rounded-lg text-center font-semibold text-sm transition-all duration-300 hidden"></div>
             <div class="space-y-4">
                 <div>
@@ -69,12 +49,16 @@
                 </div>
             </div>
             <div class="flex mt-8">
-                <button onclick="handleLogin()" class="w-full btn-primary font-bold py-3 px-6 rounded-lg transition shadow-md"><i class="fas fa-sign-in-alt mr-2"></i>Entrar</button>
+                <button id="login-button" class="w-full btn-primary font-bold py-3 px-6 rounded-lg transition shadow-md flex items-center justify-center">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    <span id="login-button-text">Entrar</span>
+                    <i id="login-spinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- TELA PRINCIPAL DA APLICAÇÃO (escondida por padrão) -->
+    <!-- TELA PRINCIPAL DA APLICAÇÃO -->
     <div id="app-screen" class="container bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-5xl mx-auto hidden">
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b">
             <div>
@@ -85,29 +69,21 @@
         </header>
         
         <div id="notification-status" role="status" aria-live="polite" class="p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300"></div>
-
-        <!-- Dashboard de Aniversários -->
         <section id="dashboard" class="mb-8">
             <h2 class="text-2xl font-semibold text-primary mb-4">Dashboard</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Aniversariantes de Hoje -->
                 <div class="bg-gray-50 p-4 rounded-lg border">
                     <h3 class="font-bold text-lg text-accent mb-3 flex items-center gap-2"><i class="fas fa-birthday-cake"></i> Aniversariantes de Hoje</h3>
                     <div id="today-birthdays" class="space-y-2"></div>
                 </div>
-                <!-- Próximos Aniversários -->
                 <div class="bg-gray-50 p-4 rounded-lg border">
                     <h3 class="font-bold text-lg text-primary mb-3 flex items-center gap-2"><i class="fas fa-calendar-alt"></i> Próximos 7 Dias</h3>
                     <div id="upcoming-birthdays" class="space-y-2"></div>
                 </div>
             </div>
         </section>
-
-        <!-- Seção do Formulário colapsável -->
         <details id="form-details" class="mb-8 bg-gray-50 rounded-lg border">
-            <summary class="p-4 font-semibold text-lg cursor-pointer flex items-center gap-3 text-primary">
-                <i class="fas fa-plus-circle"></i> Adicionar / Editar Contato
-            </summary>
+            <summary class="p-4 font-semibold text-lg cursor-pointer flex items-center gap-3 text-primary"><i class="fas fa-plus-circle"></i> Adicionar / Editar Contato</summary>
             <div class="p-6 border-t border-gray-200">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="form-group"><label for="nome" class="block mb-2 font-medium text-gray-700">Nome:</label><input type="text" id="nome" placeholder="Nome completo" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 transition"></div>
@@ -121,8 +97,6 @@
                 </div>
             </div>
         </details>
-
-        <!-- Seção da Lista de Contatos -->
         <div id="contatos">
             <h2 class="text-2xl font-semibold text-primary border-b-2 border-primary pb-2 mb-6">Lista de Contatos</h2>
             <div class="bg-gray-50 p-4 rounded-lg mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -134,7 +108,6 @@
                 </div>
                 <div class="w-full md:w-auto flex-grow md:flex-grow-0"><input type="text" id="search-input" placeholder="🔎 Buscar por nome..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500"></div>
             </div>
-            
             <div class="overflow-x-auto"><table class="min-w-full bg-white"><thead class="bg-gray-100"><tr><th class="p-4 w-10 text-left"><input type="checkbox" id="select-all-checkbox" onchange="handleSelectAll(this.checked)"></th><th class="p-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Nome</th><th class="p-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Telefone</th><th class="p-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Aniversário</th><th class="p-4 text-center text-sm font-semibold text-gray-600 uppercase tracking-wider">Ações</th></tr></thead><tbody id="listaContatos" class="divide-y divide-gray-200"></tbody></table></div>
             <div id="pagination-controls" class="mt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600"></div>
         </div>
@@ -143,49 +116,83 @@
     <!-- Modal de Confirmação de Exclusão -->
     <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden modal-backdrop" onclick="hideDeleteConfirmModal()"><div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md" onclick="event.stopPropagation()"><h3 id="delete-modal-title" class="text-xl font-bold text-primary mb-4"></h3><p id="delete-modal-text" class="text-gray-600 mb-6"></p><div class="flex justify-end gap-4"><button onclick="hideDeleteConfirmModal()" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 transition">Cancelar</button><button id="confirm-delete-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition">Excluir</button></div></div></div>
 
-    <script>
-        // --- CONFIGURAÇÃO ---
-        const USERS_STORAGE_KEY = 'aniversario_app_users';
-        const SESSION_KEY = 'aniversario_app_session';
-        const ITEMS_PER_PAGE = 25;
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // --- CONFIGURAÇÃO DO FIREBASE (COLE SUAS CREDENCIAIS AQUI) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCTNQ-XkJ97wgbMrL5gjD6UUCZpROX7Aqk",
+            authDomain: "sales-eed3e.firebaseapp.com",
+            projectId: "sales-eed3e",
+            storageBucket: "sales-eed3e.appspot.com",
+            messagingSenderId: "488166139841",
+            appId: "1:488166139841:web:33a58afd78f4cb909a7140",
+            measurementId: "G-6CKCSVGN0F"
+        };
+
+        // Inicialização do Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- VARIÁVEIS GLOBAIS ---
         let currentPage = 1;
         let selectedContacts = new Set();
-        let currentUser = null;
-        
-        // --- CONFIGURAÇÃO MANUAL DE USUÁRIOS ---
-        // Para adicionar/definir usuários, você pode usar o console do navegador (F12).
-        // Copie e cole o comando abaixo no console, edite com seus usuários e pressione Enter.
-        // Faça isso apenas uma vez.
-        //
-        // localStorage.setItem('aniversario_app_users', JSON.stringify({ 'admin': 'admin123', 'usuario1': 'senha123' }));
-        //
-        // O comando acima define dois usuários: 'admin' (senha: 'admin123') e 'usuario1' (senha: 'senha123').
+        let allContacts = []; // Cache local de todos os contatos
+        let unsubscribeFromContacts = null; // Função para parar de ouvir o snapshot
 
-        // --- INICIALIZAÇÃO ---
-        document.addEventListener('DOMContentLoaded', () => {
-            checkSession();
-            // Adiciona listeners para a tecla Enter nos campos de login
-            document.getElementById('username').addEventListener('keyup', (e) => { if (e.key === 'Enter') handleLogin(); });
-            document.getElementById('password').addEventListener('keyup', (e) => { if (e.key === 'Enter') handleLogin(); });
+        // --- LÓGICA DE AUTENTICAÇÃO E SESSÃO ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuário está logado
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-screen').classList.remove('hidden');
+                document.getElementById('welcome-user').textContent = `Olá, ${user.email.split('@')[0]}!`;
+                startApp(user); // CORREÇÃO: Chamando a função com nome corrigido
+            } else {
+                // Usuário não está logado
+                document.getElementById('app-screen').classList.add('hidden');
+                document.getElementById('login-screen').classList.remove('hidden');
+                if (unsubscribeFromContacts) unsubscribeFromContacts(); // Para de ouvir os contatos antigos
+                allContacts = [];
+            }
         });
 
-        function initializeApp() {
-            setupEventListeners();
-            updateNotificationStatus();
-            pedirPermissaoNotificacao();
-            render();
-            verificarAniversarios();
-            setInterval(verificarAniversarios, 3600000); 
+        async function handleLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            if (!username || !password) {
+                showLoginMessage('Usuário e senha são obrigatórios.');
+                return;
+            }
+
+            // Adiciona um domínio falso para o Firebase aceitar
+            const email = `${username}@${username}.com`;
+            
+            setLoginButtonLoading(true);
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged irá cuidar de mostrar a tela do app
+            } catch (error) {
+                console.error("Erro de Login:", error.code);
+                showLoginMessage('Usuário ou senha inválidos.');
+            } finally {
+                setLoginButtonLoading(false);
+            }
         }
 
-        function setupEventListeners() {
-            document.getElementById('search-input').addEventListener('input', () => {
-                currentPage = 1;
-                render();
-            });
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Erro ao sair:", error);
+            }
         }
 
-        // --- LÓGICA DE LOGIN E SESSÃO ---
         function showLoginMessage(message, type = 'error') {
             const el = document.getElementById('login-message');
             const colors = { success: 'bg-green-100 text-green-800', error: 'bg-red-100 text-red-800' };
@@ -193,85 +200,54 @@
             el.className = `p-3 mb-4 rounded-lg text-center font-semibold text-sm transition-all duration-300 ${colors[type]}`;
             el.classList.remove('hidden');
         }
-
-        function handleLogin() {
-            const username = document.getElementById('username').value.trim().toLowerCase();
-            const password = document.getElementById('password').value.trim();
-            if (!username || !password) {
-                showLoginMessage('Usuário e senha são obrigatórios.');
-                return;
-            }
-
-            let users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY)) || {};
-            if (users[username] && users[username] === password) {
-                currentUser = username;
-                localStorage.setItem(SESSION_KEY, currentUser);
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-screen').classList.remove('hidden');
-                document.getElementById('welcome-user').textContent = `Olá, ${currentUser}!`;
-                initializeApp();
-            } else {
-                showLoginMessage('Usuário ou senha inválidos.');
-            }
-        }
         
-        function handleLogout() {
-            currentUser = null;
-            localStorage.removeItem(SESSION_KEY);
-            document.getElementById('app-screen').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-            // Limpa campos para segurança
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('login-message').classList.add('hidden');
-        }
-
-        function checkSession() {
-            const loggedInUser = localStorage.getItem(SESSION_KEY);
-            if (loggedInUser) {
-                currentUser = loggedInUser;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-screen').classList.remove('hidden');
-                document.getElementById('welcome-user').textContent = `Olá, ${currentUser}!`;
-                initializeApp();
+        function setLoginButtonLoading(isLoading) {
+            const button = document.getElementById('login-button');
+            const text = document.getElementById('login-button-text');
+            const spinner = document.getElementById('login-spinner');
+            if (isLoading) {
+                button.disabled = true;
+                text.classList.add('hidden');
+                spinner.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                text.classList.remove('hidden');
+                spinner.classList.add('hidden');
             }
         }
 
-        // --- FUNÇÕES DE DADOS (ADAPTADAS PARA MULTI-USUÁRIO) ---
-        function getUserContactsKey() {
-            if (!currentUser) return null;
-            return `aniversario_contacts_${currentUser}`;
+        // --- INICIALIZAÇÃO DA APLICAÇÃO ---
+        // CORREÇÃO: A função foi renomeada para 'startApp' para evitar conflito com a importação do Firebase
+        function startApp(user) {
+            setupEventListeners();
+            updateNotificationStatus();
+            pedirPermissaoNotificacao();
+            
+            // Inicia o listener de contatos em tempo real
+            const contactsCollectionRef = collection(db, 'contatos', user.uid, 'items');
+            unsubscribeFromContacts = onSnapshot(query(contactsCollectionRef), (snapshot) => {
+                allContacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                render(); // Re-renderiza tudo com os novos dados
+            });
+
+            verificarAniversarios();
+            setInterval(verificarAniversarios, 3600000); 
         }
 
-        function getContatos() {
-            const key = getUserContactsKey();
-            if (!key) return [];
-            try {
-                return JSON.parse(localStorage.getItem(key)) || [];
-            } catch (error) {
-                console.error("Erro ao ler contatos do localStorage:", error);
-                return [];
-            }
-        }
-        function salvarListaContatos(contatos) {
-            const key = getUserContactsKey();
-            if (!key) return;
-            try {
-                localStorage.setItem(key, JSON.stringify(contatos));
-            } catch (error) {
-                console.error("Erro ao salvar contatos no localStorage:", error);
-                displayMessage('Erro ao salvar os dados.', 'error');
-            }
+        function setupEventListeners() {
+            document.getElementById('login-button').onclick = handleLogin;
+            document.getElementById('username').addEventListener('keyup', (e) => { if (e.key === 'Enter') handleLogin(); });
+            document.getElementById('password').addEventListener('keyup', (e) => { if (e.key === 'Enter') handleLogin(); });
+            document.getElementById('search-input').addEventListener('input', render);
         }
 
-        // --- RENDERIZAÇÃO PRINCIPAL ---
+        // --- RENDERIZAÇÃO ---
         function render() {
             renderDashboard();
             renderTable();
         }
 
         function renderDashboard() {
-            const contatos = getContatos();
             const todayContainer = document.getElementById('today-birthdays');
             const upcomingContainer = document.getElementById('upcoming-birthdays');
             todayContainer.innerHTML = '';
@@ -280,7 +256,7 @@
             const today = [];
             const upcoming = [];
 
-            contatos.forEach(contato => {
+            allContacts.forEach(contato => {
                 const daysUntil = getDaysUntilNextBirthday(contato.nascimento);
                 if (daysUntil === 0) {
                     today.push(contato);
@@ -289,6 +265,9 @@
                 }
             });
             
+            today.sort((a, b) => a.nome.localeCompare(b.nome));
+            upcoming.sort((a, b) => a.daysUntil - b.daysUntil || a.nome.localeCompare(b.nome));
+
             if (today.length > 0) {
                 today.forEach(c => todayContainer.appendChild(createDashboardItem(c)));
             } else {
@@ -296,7 +275,6 @@
             }
 
             if (upcoming.length > 0) {
-                upcoming.sort((a,b) => a.daysUntil - b.daysUntil);
                 upcoming.forEach(c => upcomingContainer.appendChild(createDashboardItem(c, true)));
             } else {
                 upcomingContainer.innerHTML = '<p class="text-sm text-gray-500">Nenhum aniversário nos próximos 7 dias.</p>';
@@ -317,35 +295,25 @@
                 detail = `<i onclick="enviarWhatsApp('${contato.telefone}', '${contato.nome}')" class="fab fa-whatsapp text-xl action-icon action-icon-accent" title="Enviar WhatsApp"></i>`;
             }
 
-            item.innerHTML = `
-                <span class="font-medium text-gray-800">${contato.nome}</span>
-                ${detail}
-            `;
+            item.innerHTML = `<span class="font-medium text-gray-800">${contato.nome}</span> ${detail}`;
             return item;
         }
 
         function renderTable() {
             const tbody = document.getElementById('listaContatos');
             tbody.innerHTML = '';
-            let contatos = getContatos();
             
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            if (searchTerm) {
-                contatos = contatos.filter(c => c.nome.toLowerCase().includes(searchTerm) || (c.telefone && c.telefone.includes(searchTerm)));
-            }
-            contatos.sort((a, b) => getDaysUntilNextBirthday(a.nascimento) - getDaysUntilNextBirthday(b.nascimento));
+            let filteredContacts = allContacts.filter(c => c.nome.toLowerCase().includes(searchTerm) || (c.telefone && c.telefone.includes(searchTerm)));
+            
+            filteredContacts.sort((a, b) => getDaysUntilNextBirthday(a.nascimento) - getDaysUntilNextBirthday(b.nascimento));
 
-            const totalItems = contatos.length;
-            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-            const paginatedContatos = contatos.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-            if (paginatedContatos.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-6">Nenhum contato encontrado. Adicione um novo!</td></tr>`;
+            if (filteredContacts.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-6">Nenhum contato encontrado.</td></tr>`;
             } else {
-                paginatedContatos.forEach(contato => tbody.appendChild(createContactRow(contato)));
+                filteredContacts.forEach(contato => tbody.appendChild(createContactRow(contato)));
             }
             
-            renderPaginationControls(totalPages, totalItems);
             updateBulkDeleteButton();
         }
 
@@ -356,56 +324,21 @@
             row.className = 'hover:bg-gray-50';
             const isChecked = selectedContacts.has(contato.id);
             row.innerHTML = `
-                <td class="p-4 w-10"><input type="checkbox" class="contact-checkbox" data-id="${contato.id}" onchange="handleRowSelect(${contato.id}, this.checked)" ${isChecked ? 'checked' : ''}></td>
+                <td class="p-4 w-10"><input type="checkbox" class="contact-checkbox" data-id="${contato.id}" onchange="window.handleRowSelect('${contato.id}', this.checked)" ${isChecked ? 'checked' : ''}></td>
                 <td class="p-4 text-sm font-medium text-gray-800">${contato.nome}</td>
                 <td class="p-4 text-sm text-gray-600">${contato.telefone || 'N/A'}</td>
                 <td class="p-4 text-sm text-gray-600">${dataFormatada}</td>
                 <td class="p-4 text-center"><div class="flex justify-center items-center gap-4">
-                    <i onclick="enviarWhatsApp('${contato.telefone}', '${contato.nome}')" class="fab fa-whatsapp text-xl action-icon action-icon-accent" title="Enviar WhatsApp"></i>
-                    <i onclick="editarContato(${contato.id})" class="fas fa-pencil-alt action-icon" title="Editar Contato"></i>
-                    <i onclick="showDeleteConfirmModal(${contato.id})" class="fas fa-trash-alt action-icon action-icon-delete" title="Excluir Contato"></i>
+                    <i onclick="window.enviarWhatsApp('${contato.telefone}', '${contato.nome}')" class="fab fa-whatsapp text-xl action-icon action-icon-accent" title="Enviar WhatsApp"></i>
+                    <i onclick="window.editarContato('${contato.id}')" class="fas fa-pencil-alt action-icon" title="Editar Contato"></i>
+                    <i onclick="window.showDeleteConfirmModal('${contato.id}')" class="fas fa-trash-alt action-icon action-icon-delete" title="Excluir Contato"></i>
                 </div></td>
             `;
             return row;
         }
 
-        function renderPaginationControls(totalPages, totalItems) {
-            const controlsContainer = document.getElementById('pagination-controls');
-            if (totalPages <= 1) {
-                controlsContainer.innerHTML = '';
-                return;
-            }
-            let buttons = '';
-            const maxButtons = 5;
-            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
-            if (endPage - startPage + 1 < maxButtons) {
-                startPage = Math.max(1, endPage - maxButtons + 1);
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
-                buttons += `<button onclick="changePage(${i})" class="px-3 py-1 rounded-md ${currentPage === i ? 'btn-primary' : 'bg-gray-200'}">${i}</button>`;
-            }
-
-            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE + 1;
-            const endIndex = Math.min(startIndex + ITEMS_PER_PAGE - 1, totalItems);
-            controlsContainer.innerHTML = `
-                <span class="font-medium">Exibindo ${startIndex}-${endIndex} de ${totalItems} contatos</span>
-                <div class="flex items-center gap-2 mt-2 md:mt-0">
-                    <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
-                    ${buttons}
-                    <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">Próximo</button>
-                </div>
-            `;
-        }
-        
-        function changePage(page) {
-            currentPage = page;
-            renderTable();
-        }
-
-        // --- CRUD E AÇÕES ---
-        function salvarContato() {
+        // --- CRUD COM FIRESTORE ---
+        async function salvarContato() {
             const nome = document.getElementById('nome').value.trim();
             const telefone = document.getElementById('telefone').value.trim();
             const nascimento = document.getElementById('nascimento').value;
@@ -414,22 +347,67 @@
                 displayMessage('Por favor, preencha o nome e a data de aniversário.', 'error');
                 return;
             }
-            let contatos = getContatos();
-            if (contactId) {
-                const idx = contatos.findIndex(c => c.id == contactId);
-                if (idx > -1) contatos[idx] = { ...contatos[idx], nome, telefone, nascimento };
-            } else {
-                contatos.push({ id: Date.now(), nome, telefone, nascimento, lastNotifiedYear: null });
+
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const contactData = { nome, telefone, nascimento, lastNotifiedYear: null };
+            const contactsCollectionRef = collection(db, 'contatos', user.uid, 'items');
+
+            try {
+                if (contactId) {
+                    // Editando contato existente
+                    const contactDocRef = doc(db, 'contatos', user.uid, 'items', contactId);
+                    await setDoc(contactDocRef, contactData, { merge: true });
+                } else {
+                    // Adicionando novo contato
+                    await addDoc(contactsCollectionRef, contactData);
+                }
+                limparFormulario();
+                document.getElementById('form-details').open = false;
+                displayMessage('Contato salvo com sucesso!', 'success');
+            } catch (error) {
+                console.error("Erro ao salvar contato:", error);
+                displayMessage('Erro ao salvar contato.', 'error');
             }
-            salvarListaContatos(contatos);
-            limparFormulario();
-            document.getElementById('form-details').open = false;
-            render();
-            displayMessage('Contato salvo com sucesso!', 'success');
         }
 
-        function editarContato(id) {
-            const contato = getContatos().find(c => c.id == id);
+        async function excluirContato(id) {
+            const user = auth.currentUser;
+            if (!user) return;
+            try {
+                const contactDocRef = doc(db, 'contatos', user.uid, 'items', id);
+                await deleteDoc(contactDocRef);
+                displayMessage('Contato excluído!', 'success');
+                hideDeleteConfirmModal();
+            } catch (error) {
+                console.error("Erro ao excluir contato:", error);
+                displayMessage('Erro ao excluir contato.', 'error');
+            }
+        }
+
+        async function deleteSelectedContacts() {
+            const user = auth.currentUser;
+            if (!user) return;
+            const count = selectedContacts.size;
+            try {
+                for (const id of selectedContacts) {
+                    const contactDocRef = doc(db, 'contatos', user.uid, 'items', id);
+                    await deleteDoc(contactDocRef);
+                }
+                selectedContacts.clear();
+                displayMessage(`${count} contatos excluídos!`, 'success');
+                hideDeleteConfirmModal();
+            } catch (error) {
+                console.error("Erro ao excluir contatos:", error);
+                displayMessage('Erro ao excluir contatos.', 'error');
+            }
+        }
+
+        // --- FUNÇÕES AUXILIARES E DE UI ---
+        // Funções de UI precisam ser globais para serem acessadas pelo HTML (onclick)
+        window.editarContato = (id) => {
+            const contato = allContacts.find(c => c.id == id);
             if (contato) {
                 document.getElementById('contactId').value = contato.id;
                 document.getElementById('nome').value = contato.nome;
@@ -438,33 +416,26 @@
                 document.getElementById('form-details').open = true;
                 document.getElementById('form-details').scrollIntoView();
             }
-        }
-        
-        function isMobile() {
-            const regex = /Mobi|Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
-            return regex.test(navigator.userAgent);
-        }
+        };
 
-        function enviarWhatsApp(telefone, nome) {
+        window.enviarWhatsApp = (telefone, nome) => {
             if (!telefone) {
                 displayMessage('Este contato não possui um número de telefone.', 'warning');
                 return;
             }
             let num = telefone.replace(/\D/g, '');
-            if (num.length >= 10 && num.length <= 11) {
-                num = '55' + num;
-            }
+            if (num.length >= 10 && num.length <= 11) num = '55' + num;
             if (num.length < 12) {
                 displayMessage('Número de telefone inválido. Inclua o DDD.', 'error', 6000);
                 return;
             }
+            const isMobile = /Mobi|Android/i.test(navigator.userAgent);
             const mensagem = encodeURIComponent(`Olá ${nome}, feliz aniversário! 🎉`);
-            let url = isMobile() ? `https://wa.me/${num}?text=${mensagem}` : `https://web.whatsapp.com/send?phone=${num}&text=${mensagem}`;
+            const url = isMobile ? `https://wa.me/${num}?text=${mensagem}` : `https://web.whatsapp.com/send?phone=${num}&text=${mensagem}`;
             window.open(url, '_blank');
-        }
-
-        // --- LÓGICA DE EXCLUSÃO ---
-        function showDeleteConfirmModal(id, isBulk = false) {
+        };
+        
+        window.showDeleteConfirmModal = (id, isBulk = false) => {
             const modal = document.getElementById('delete-modal');
             const titleEl = document.getElementById('delete-modal-title');
             const textEl = document.getElementById('delete-modal-text');
@@ -473,47 +444,31 @@
                 if (selectedContacts.size === 0) return;
                 titleEl.textContent = 'Confirmar Exclusão em Massa';
                 textEl.textContent = `Tem certeza que deseja excluir os ${selectedContacts.size} contatos selecionados?`;
-                confirmBtn.onclick = () => deleteSelectedContacts();
+                confirmBtn.onclick = deleteSelectedContacts;
             } else {
                 titleEl.textContent = 'Confirmar Exclusão';
                 textEl.textContent = 'Tem certeza que deseja excluir este contato?';
                 confirmBtn.onclick = () => excluirContato(id);
             }
             modal.classList.remove('hidden');
-            setTimeout(() => modal.style.opacity = 1, 10);
-        }
-        function hideDeleteConfirmModal() {
-            const modal = document.getElementById('delete-modal');
-            modal.style.opacity = 0;
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-        function excluirContato(id) {
-            salvarListaContatos(getContatos().filter(c => c.id != id));
-            render();
-            displayMessage('Contato excluído!', 'success');
-            hideDeleteConfirmModal();
-        }
-        function deleteSelectedContacts() {
-            let contatos = getContatos().filter(c => !selectedContacts.has(c.id));
-            salvarListaContatos(contatos);
-            const count = selectedContacts.size;
-            selectedContacts.clear();
-            render();
-            displayMessage(`${count} contatos excluídos!`, 'success');
-            hideDeleteConfirmModal();
-        }
+        };
 
-        // --- LÓGICA DE SELEÇÃO EM MASSA ---
-        function handleSelectAll(isChecked) {
-            document.querySelectorAll('.contact-checkbox').forEach(cb => {
-                cb.checked = isChecked;
-                handleRowSelect(parseInt(cb.dataset.id), isChecked);
-            });
-        }
-        function handleRowSelect(id, isChecked) {
+        window.hideDeleteConfirmModal = () => {
+            document.getElementById('delete-modal').classList.add('hidden');
+        };
+
+        window.handleRowSelect = (id, isChecked) => {
             if (isChecked) selectedContacts.add(id); else selectedContacts.delete(id);
             updateBulkDeleteButton();
-        }
+        };
+
+        window.handleSelectAll = (isChecked) => {
+            document.querySelectorAll('.contact-checkbox').forEach(cb => {
+                cb.checked = isChecked;
+                handleRowSelect(cb.dataset.id, isChecked);
+            });
+        };
+
         function updateBulkDeleteButton() {
             const btn = document.getElementById('delete-selected-btn');
             const selectAllCb = document.getElementById('select-all-checkbox');
@@ -525,49 +480,14 @@
                 selectAllCb.checked = false;
             }
         }
-
-        // --- IMPORTAÇÃO E EXPORTAÇÃO DE CSV ---
-        function importarDeCSV(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-                const linhas = e.target.result.split('\n').slice(1).filter(l => l.trim());
-                let contatosAtuais = getContatos();
-                let importados = 0;
-                linhas.forEach(l => {
-                    const [nome, telefone, nascimento] = l.split(',').map(p => p.trim());
-                    if (nome && nascimento && /^\d{4}-\d{2}-\d{2}$/.test(nascimento) && !contatosAtuais.some(c => c.nome === nome && c.nascimento === nascimento)) {
-                        contatosAtuais.push({ id: Date.now() + Math.random(), nome, telefone, nascimento, lastNotifiedYear: null });
-                        importados++;
-                    }
-                });
-                if (importados > 0) {
-                    salvarListaContatos(contatosAtuais);
-                    render();
-                    displayMessage(`${importados} contatos importados!`, 'success');
-                } else {
-                    displayMessage('Nenhum contato novo importado.', 'warning');
-                }
-                event.target.value = '';
-            };
-            reader.readAsText(file);
-        }
-        function exportarParaCSV() {
-            const contatos = getContatos();
-            if (contatos.length === 0) {
-                displayMessage('Nenhum contato para exportar.', 'warning');
-                return;
-            }
-            const csv = 'data:text/csv;charset=utf-8,' + encodeURIComponent('Nome,Telefone,Nascimento\n' + contatos.map(c => `${c.nome},${c.telefone || ''},${c.nascimento}`).join('\n'));
-            const link = document.createElement('a');
-            link.setAttribute('href', csv);
-            link.setAttribute('download', `contatos_${currentUser}.csv`);
-            link.click();
-            link.remove();
+        
+        function limparFormulario() {
+            document.getElementById('nome').value = '';
+            document.getElementById('telefone').value = '';
+            document.getElementById('nascimento').value = '';
+            document.getElementById('contactId').value = '';
         }
 
-        // --- FUNÇÕES UTILITÁRIAS ---
         function getDaysUntilNextBirthday(nascimento) {
             if (!nascimento) return 9999;
             const hoje = new Date();
@@ -577,19 +497,22 @@
             if (proximoAniversario < hoje) proximoAniversario.setFullYear(hoje.getFullYear() + 1);
             return Math.ceil((proximoAniversario - hoje) / (1000 * 60 * 60 * 24));
         }
-        function limparFormulario() {
-            document.getElementById('nome').value = '';
-            document.getElementById('telefone').value = '';
-            document.getElementById('nascimento').value = '';
-            document.getElementById('contactId').value = '';
-        }
         
         // --- CÓDIGO UTILITÁRIO MINIMIZADO E NOTIFICAÇÕES ---
+        // (As funções de notificação e mensagem permanecem as mesmas)
         function displayMessage(message, type = 'info', duration = 4000) {const s=document.getElementById('notification-status'),c={success:'bg-green-100 text-green-800',error:'bg-red-100 text-red-800',warning:'bg-yellow-100 text-yellow-800',info:'bg-blue-100 text-blue-800'};s.className=`p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${c[type]||c.info}`;s.innerHTML=`<strong>${message}</strong>`;if(duration>0)setTimeout(()=>{if(s.innerHTML.includes(message))updateNotificationStatus()},duration)}
         function updateNotificationStatus() {const s=document.getElementById('notification-status');let t,e='',o='info';if(!('Notification'in window)){t="<strong>Status:</strong> Notificações não suportadas.";o='error'}else{switch(Notification.permission){case'granted':t='<strong>Status:</strong> Notificações Permitidas ✔️';o='success';break;case'denied':t='<strong>Status:</strong> Notificações Negadas ❌';e='<br><small>Permita nas configurações do navegador.</small>';o='error';break;default:t='<strong>Status:</strong> Aguardando sua permissão...';o='warning'}}const n={success:'bg-green-100 text-green-800',error:'bg-red-100 text-red-800',warning:'bg-yellow-100 text-yellow-800',info:'bg-blue-100 text-blue-800'};s.className=`p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${n[o]}`;s.innerHTML=t+e}
         function pedirPermissaoNotificacao(){if('Notification'in window&&Notification.permission==='default'){Notification.requestPermission().then(p=>{updateNotificationStatus();if(p==='granted')verificarAniversarios()})}}
-        function verificarAniversarios(){if(Notification.permission!=='granted' || !currentUser)return;const t=new Date(),d=t.getDate(),m=t.getMonth()+1,y=t.getFullYear();let c=getContatos(),u=!1;c.forEach(co=>{const[,M,D]=co.nascimento.split('-');if(parseInt(D,10)===d&&parseInt(M,10)===m&&co.lastNotifiedYear!==y){enviarNotificacao(co);co.lastNotifiedYear=y;u=!0}});if(u)salvarListaContatos(c)}
-        function enviarNotificacao(c){const o={body:`Hoje é o aniversário de ${c.nome}! Clique para enviar uma mensagem.`,icon:'https://placehold.co/128x128/D69E2E/white?text=🎁',vibrate:[200,100,200],requireInteraction:!0};const n=new Notification('🎉 Lembrete de Aniversário! 🎉',o);n.onclick=e=>{e.preventDefault();if(c.telefone)enviarWhatsApp(c.telefone,c.nome);n.close()}}
+        function verificarAniversarios(){const user=auth.currentUser;if(Notification.permission!=='granted'||!user)return;const t=new Date(),d=t.getDate(),m=t.getMonth()+1,y=t.getFullYear();allContacts.forEach(co=>{const[,M,D]=co.nascimento.split('-');if(parseInt(D,10)===d&&parseInt(M,10)===m&&co.lastNotifiedYear!==y){enviarNotificacao(co);co.lastNotifiedYear=y;const contactDocRef=doc(db,'contatos',user.uid,'items',co.id);setDoc(contactDocRef,{lastNotifiedYear:y},{merge:!0})}})}
+        function enviarNotificacao(c){const o={body:`Hoje é o aniversário de ${c.nome}! Clique para enviar uma mensagem.`,icon:'https://placehold.co/128x128/D69E2E/white?text=🎁',vibrate:[200,100,200],requireInteraction:!0};const n=new Notification('🎉 Lembrete de Aniversário! 🎉',o);n.onclick=e=>{e.preventDefault();if(c.telefone)window.enviarWhatsApp(c.telefone,c.nome);n.close()}}
+
+        // Expondo funções globais necessárias pelo HTML
+        window.salvarContato = salvarContato;
+        window.limparFormulario = limparFormulario;
+        window.handleLogout = handleLogout;
+        window.importarDeCSV = () => alert("Importação ainda não implementada com Firestore."); // Placeholder
+        window.exportarParaCSV = () => alert("Exportação ainda não implementada com Firestore."); // Placeholder
+
     </script>
 </body>
 </html>
