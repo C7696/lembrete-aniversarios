@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lembrete de Aniversários (Versão Local)</title>
+    <title>Lembrete de Aniversários (Versão Profissional)</title>
     <!-- Tailwind CSS para um design moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Fonte customizada e pequenos ajustes de estilo */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
             scroll-behavior: smooth;
@@ -23,64 +23,124 @@
         :root {
             scrollbar-gutter: stable;
         }
+        /* Estilo para botão de visualização ativo */
+        .view-btn-active {
+            background-color: #2563eb; /* bg-blue-600 */
+            color: white;
+            border-color: #2563eb;
+        }
+        /* Oculta a seta padrão do <details> */
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        /* Estilo para ícones de ação na tabela */
+        .action-icon {
+            cursor: pointer;
+            color: #6b7280; /* text-gray-500 */
+            transition: color 0.2s;
+        }
+        .action-icon:hover {
+            color: #1d4ed8; /* text-blue-700 */
+        }
+        .action-icon.delete:hover {
+            color: #dc2626; /* text-red-600 */
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-start justify-center min-h-screen p-4 sm:p-6 lg:p-8">
 
-    <div class="container bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-4xl mx-auto">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+    <div class="container bg-white p-6 sm:p-8 rounded-2xl shadow-lg w-full max-w-5xl mx-auto">
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
             <h1 class="text-3xl font-bold text-blue-600">Lembrete de Aniversários</h1>
-        </div>
+        </header>
         
-        <!-- Status da Notificação e Mensagens para o Usuário -->
         <div id="notification-status" role="status" aria-live="polite" class="p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300"></div>
 
-        <!-- Seção do Formulário -->
-        <div id="form-cadastro" class="mb-8">
-            <h2 class="text-2xl font-semibold text-gray-800 border-b-2 border-blue-500 pb-2 mb-6">Adicionar / Editar Contato</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="form-group">
-                    <label for="nome" class="block mb-2 font-medium text-gray-700">Nome:</label>
-                    <input type="text" id="nome" placeholder="Nome completo" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+        <!-- Seção do Formulário em um <details> para ser colapsável -->
+        <details id="form-details" class="mb-8 bg-gray-50 rounded-lg border">
+            <summary class="p-4 font-semibold text-lg cursor-pointer flex items-center gap-3">
+                <i class="fas fa-plus-circle text-blue-600"></i> Adicionar / Editar Contato
+            </summary>
+            <div class="p-6 border-t border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="form-group">
+                        <label for="nome" class="block mb-2 font-medium text-gray-700">Nome:</label>
+                        <input type="text" id="nome" placeholder="Nome completo" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div class="form-group">
+                        <label for="telefone" class="block mb-2 font-medium text-gray-700">Telefone:</label>
+                        <input type="tel" id="telefone" placeholder="(11) 99999-9999" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
+                    <div class="form-group">
+                        <label for="nascimento" class="block mb-2 font-medium text-gray-700">Data de Aniversário:</label>
+                        <input type="date" id="nascimento" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="telefone" class="block mb-2 font-medium text-gray-700">Telefone:</label>
-                    <input type="tel" id="telefone" placeholder="(11) 99999-9999" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                </div>
-                <div class="form-group">
-                    <label for="nascimento" class="block mb-2 font-medium text-gray-700">Data de Aniversário:</label>
-                    <input type="date" id="nascimento" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                <input type="hidden" id="contactId">
+                <div class="flex flex-wrap gap-4 mt-6">
+                    <button onclick="salvarContato()" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 active:scale-100 shadow-md">
+                        <i class="fas fa-save mr-2"></i>Salvar Contato
+                    </button>
+                    <button onclick="limparFormulario()" class="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition">
+                        Limpar
+                    </button>
                 </div>
             </div>
-            <input type="hidden" id="contactId">
-            <div class="flex flex-wrap gap-4 mt-6">
-                <button onclick="salvarContato()" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 active:scale-100 shadow-md">
-                    <i class="fas fa-save mr-2"></i>Salvar Contato
-                </button>
-                <label for="importarCSV" class="cursor-pointer bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105 active:scale-100 shadow-md inline-flex items-center">
-                    <i class="fas fa-file-csv mr-2"></i>Importar de CSV
-                </label>
-                <input type="file" id="importarCSV" accept=".csv" onchange="importarDeCSV(event)" class="hidden">
-                <button onclick="testarNotificacao()" class="bg-gray-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-700 transition-transform transform hover:scale-105 active:scale-100 shadow-md">
-                    <i class="fas fa-bell mr-2"></i>Testar Notificação
-                </button>
-            </div>
-        </div>
+        </details>
 
         <!-- Seção da Lista de Contatos -->
         <div id="contatos">
             <h2 class="text-2xl font-semibold text-gray-800 border-b-2 border-blue-500 pb-2 mb-6">Contatos Salvos</h2>
-            <ul id="listaContatos" class="space-y-4">
-                <!-- Contatos serão renderizados aqui pelo JavaScript -->
-            </ul>
+            
+            <!-- Ferramentas de Ação e Filtro -->
+            <div class="bg-gray-50 p-4 rounded-lg mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div class="flex flex-wrap gap-2">
+                     <label for="importarCSV" class="cursor-pointer bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition shadow-md inline-flex items-center text-sm">
+                        <i class="fas fa-file-csv mr-2"></i>Importar
+                    </label>
+                    <input type="file" id="importarCSV" accept=".csv" onchange="importarDeCSV(event)" class="hidden">
+                    <button onclick="exportarParaCSV()" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition shadow-md inline-flex items-center text-sm">
+                        <i class="fas fa-file-export mr-2"></i>Exportar
+                    </button>
+                    <button id="delete-selected-btn" onclick="showDeleteConfirmModal(null, true)" class="hidden bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition shadow-md inline-flex items-center text-sm">
+                        <i class="fas fa-trash-alt mr-2"></i>Excluir Selecionados
+                    </button>
+                </div>
+                <div class="w-full md:w-auto flex-grow md:flex-grow-0">
+                    <input type="text" id="search-input" placeholder="🔎 Buscar por nome..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            
+            <!-- Tabela de Contatos -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="p-4 w-10 text-left"><input type="checkbox" id="select-all-checkbox" onchange="handleSelectAll(this.checked)"></th>
+                            <th class="p-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Nome</th>
+                            <th class="p-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Telefone</th>
+                            <th class="p-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Aniversário</th>
+                            <th class="p-4 text-center text-sm font-semibold text-gray-600 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaContatos" class="divide-y divide-gray-200">
+                        <!-- Linhas da tabela serão renderizadas aqui -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Controles de Paginação -->
+            <div id="pagination-controls" class="mt-6 flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
+                <!-- Será preenchido pelo JS -->
+            </div>
         </div>
     </div>
 
     <!-- Modal de Confirmação de Exclusão -->
     <div id="delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden modal-backdrop" onclick="hideDeleteConfirmModal()">
         <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md" onclick="event.stopPropagation()">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">Confirmar Exclusão</h3>
-            <p class="text-gray-600 mb-6">Tem certeza que deseja excluir este contato? Esta ação não pode ser desfeita.</p>
+            <h3 id="delete-modal-title" class="text-xl font-bold text-gray-800 mb-4"></h3>
+            <p id="delete-modal-text" class="text-gray-600 mb-6"></p>
             <div class="flex justify-end gap-4">
                 <button onclick="hideDeleteConfirmModal()" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 transition">Cancelar</button>
                 <button id="confirm-delete-btn" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition">Excluir</button>
@@ -88,20 +148,29 @@
         </div>
     </div>
 
-    <!-- JavaScript baseado em LocalStorage -->
     <script>
         // --- CONFIGURAÇÃO ---
         const STORAGE_KEY = 'contatosAniversario';
+        const ITEMS_PER_PAGE = 25;
+        let currentPage = 1;
+        let selectedContacts = new Set();
 
         // --- INICIALIZAÇÃO ---
         document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
             updateNotificationStatus();
             pedirPermissaoNotificacao();
-            renderizarContatos();
+            render();
             verificarAniversarios();
-            // Verifica aniversários a cada hora
             setInterval(verificarAniversarios, 3600000); 
         });
+
+        function setupEventListeners() {
+            document.getElementById('search-input').addEventListener('input', () => {
+                currentPage = 1;
+                render();
+            });
+        }
 
         // --- FUNÇÕES DE DADOS (localStorage) ---
         function getContatos() {
@@ -116,8 +185,6 @@
 
         function salvarListaContatos(contatos) {
             try {
-                // Ordena os contatos por nome antes de salvar
-                contatos.sort((a, b) => a.nome.localeCompare(b.nome));
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(contatos));
             } catch (error) {
                 console.error("Erro ao salvar contatos no localStorage:", error);
@@ -125,48 +192,100 @@
             }
         }
 
-        // --- RENDERIZAÇÃO DA UI ---
-        function renderizarContatos() {
-            const contatos = getContatos();
-            const listaElemento = document.getElementById('listaContatos');
-            listaElemento.innerHTML = '';
+        // --- RENDERIZAÇÃO PRINCIPAL ---
+        function render() {
+            const tbody = document.getElementById('listaContatos');
+            tbody.innerHTML = '';
+            
+            let contatos = getContatos();
+            
+            // 1. Filtrar
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            if (searchTerm) {
+                contatos = contatos.filter(c => 
+                    c.nome.toLowerCase().includes(searchTerm) ||
+                    (c.telefone && c.telefone.includes(searchTerm))
+                );
+            }
 
-            if (contatos.length === 0) {
-                listaElemento.innerHTML = '<li class="text-center text-gray-500 p-4 bg-gray-50 rounded-lg">Nenhum contato salvo ainda.</li>';
+            // 2. Ordenar
+            contatos.sort((a, b) => a.nome.localeCompare(b.nome));
+
+            // 3. Paginar
+            const totalItems = contatos.length;
+            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const paginatedContatos = contatos.slice(startIndex, endIndex);
+
+            // 4. Renderizar
+            if (paginatedContatos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-6">Nenhum contato encontrado.</td></tr>`;
+            } else {
+                paginatedContatos.forEach(contato => {
+                    tbody.appendChild(createContactRow(contato));
+                });
+            }
+            
+            renderPaginationControls(totalPages, totalItems);
+            updateBulkDeleteButton();
+        }
+
+        function createContactRow(contato) {
+            const [ano, mes, dia] = contato.nascimento.split('-');
+            const dataFormatada = `${dia}/${mes}/${ano}`;
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+
+            const isChecked = selectedContacts.has(contato.id);
+
+            row.innerHTML = `
+                <td class="p-4 w-10"><input type="checkbox" class="contact-checkbox" data-id="${contato.id}" onchange="handleRowSelect(${contato.id}, this.checked)" ${isChecked ? 'checked' : ''}></td>
+                <td class="p-4 text-sm font-medium text-gray-800">${contato.nome}</td>
+                <td class="p-4 text-sm text-gray-600">${contato.telefone || 'N/A'}</td>
+                <td class="p-4 text-sm text-gray-600">${dataFormatada}</td>
+                <td class="p-4 text-center">
+                    <div class="flex justify-center items-center gap-4">
+                        <i onclick="enviarWhatsApp('${contato.telefone}', '${contato.nome}')" class="fab fa-whatsapp text-xl action-icon" title="Enviar WhatsApp"></i>
+                        <i onclick="editarContato(${contato.id})" class="fas fa-pencil-alt action-icon" title="Editar Contato"></i>
+                        <i onclick="showDeleteConfirmModal(${contato.id})" class="fas fa-trash-alt action-icon delete" title="Excluir Contato"></i>
+                    </div>
+                </td>
+            `;
+            return row;
+        }
+
+        function renderPaginationControls(totalPages, totalItems) {
+            const controlsContainer = document.getElementById('pagination-controls');
+            if (totalPages <= 1) {
+                controlsContainer.innerHTML = '';
                 return;
             }
 
-            contatos.forEach(contato => {
-                const [ano, mes, dia] = contato.nascimento.split('-');
-                const dataFormatada = `${dia}/${mes}/${ano}`;
-                const item = document.createElement('li');
-                item.className = 'bg-gray-50 p-4 border border-gray-200 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4';
-                
-                const whatsappButton = contato.telefone ? `
-                    <button onclick="enviarWhatsApp('${contato.telefone}', '${contato.nome}')" class="bg-green-500 text-white font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-green-600 transition text-sm" title="Enviar WhatsApp para ${contato.nome}">
-                        <i class="fab fa-whatsapp text-xl"></i>
-                    </button>
-                ` : '';
+            let buttons = '';
+            for (let i = 1; i <= totalPages; i++) {
+                buttons += `<button onclick="changePage(${i})" class="px-3 py-1 rounded-md ${currentPage === i ? 'bg-blue-600 text-white' : 'bg-gray-200'}">${i}</button>`;
+            }
 
-                item.innerHTML = `
-                    <div>
-                        <strong class="text-lg text-gray-800">${contato.nome}</strong>
-                        <p class="text-sm text-gray-600">
-                            <i class="fas fa-phone-alt text-gray-400 mr-1"></i> ${contato.telefone || 'Não informado'} | 
-                            <i class="fas fa-birthday-cake text-gray-400 ml-2 mr-1"></i> ${dataFormatada}
-                        </p>
-                    </div>
-                    <div class="flex-shrink-0 flex items-center gap-2">
-                        ${whatsappButton}
-                        <button onclick="editarContato('${contato.id}')" class="bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition text-sm">Editar</button>
-                        <button onclick="showDeleteConfirmModal('${contato.id}')" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition text-sm">Excluir</button>
-                    </div>
-                `;
-                listaElemento.appendChild(item);
-            });
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+            const endIndex = Math.min(startIndex + ITEMS_PER_PAGE - 1, totalItems);
+
+            controlsContainer.innerHTML = `
+                <span class="font-medium">Exibindo ${startIndex}-${endIndex} de ${totalItems} contatos</span>
+                <div class="flex items-center gap-2 mt-2 md:mt-0">
+                    <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button>
+                    ${buttons}
+                    <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">Próximo</button>
+                </div>
+            `;
+        }
+        
+        function changePage(page) {
+            currentPage = page;
+            render();
         }
 
-        // --- CRUD E INTEGRAÇÕES ---
+        // --- CRUD E AÇÕES ---
         function salvarContato() {
             const nome = document.getElementById('nome').value.trim();
             const telefone = document.getElementById('telefone').value.trim();
@@ -181,42 +300,32 @@
             let contatos = getContatos();
             
             if (contactId) {
-                // Editando um contato existente
                 const contatoIndex = contatos.findIndex(c => c.id == contactId);
                 if (contatoIndex > -1) {
-                    // Mantém o ano da última notificação ao atualizar
-                    const lastNotifiedYear = contatos[contatoIndex].lastNotifiedYear;
-                    contatos[contatoIndex] = { id: Number(contactId), nome, telefone, nascimento, lastNotifiedYear };
+                    contatos[contatoIndex] = { ...contatos[contatoIndex], nome, telefone, nascimento };
                     displayMessage('Contato atualizado com sucesso!', 'success');
                 }
             } else {
-                // Adicionando um novo contato
-                const novoContato = {
-                    id: Date.now(), // ID único baseado no timestamp
-                    nome,
-                    telefone,
-                    nascimento,
-                    lastNotifiedYear: null // Nulo para indicar que nunca foi notificado
-                };
+                const novoContato = { id: Date.now(), nome, telefone, nascimento, lastNotifiedYear: null };
                 contatos.push(novoContato);
                 displayMessage('Contato adicionado com sucesso!', 'success');
             }
 
             salvarListaContatos(contatos);
             limparFormulario();
-            renderizarContatos();
+            document.getElementById('form-details').open = false; // Fecha o formulário
+            render();
         }
 
         function editarContato(id) {
-            const contatos = getContatos();
-            const contato = contatos.find(c => c.id == id);
+            const contato = getContatos().find(c => c.id == id);
             if (contato) {
                 document.getElementById('contactId').value = contato.id;
                 document.getElementById('nome').value = contato.nome;
                 document.getElementById('telefone').value = contato.telefone;
                 document.getElementById('nascimento').value = contato.nascimento;
-                // Rola a página para o topo para mostrar o formulário preenchido
-                document.getElementById('form-cadastro').scrollIntoView();
+                document.getElementById('form-details').open = true;
+                document.getElementById('form-details').scrollIntoView();
             }
         }
 
@@ -225,35 +334,35 @@
                 displayMessage('Este contato não possui um número de telefone.', 'warning');
                 return;
             }
-            // Remove tudo que não for dígito
             let numeroLimpo = telefone.replace(/\D/g, '');
-            // Adiciona o código do país (Brasil) se não estiver presente
-            if (numeroLimpo.length >= 10 && numeroLimpo.length <= 11) {
-                numeroLimpo = '55' + numeroLimpo;
-            }
+            if (numeroLimpo.length >= 10 && numeroLimpo.length <= 11) numeroLimpo = '55' + numeroLimpo;
             if (numeroLimpo.length < 12) {
-                displayMessage('Número de telefone inválido. Inclua o DDD. Ex: (11) 99999-8888', 'error', 6000);
+                displayMessage('Número de telefone inválido. Inclua o DDD.', 'error', 6000);
                 return;
             }
-            // Mensagem pré-definida
             const mensagem = encodeURIComponent(`Olá ${nome}, feliz aniversário! 🎉`);
-            const urlWhatsApp = `https://wa.me/${numeroLimpo}?text=${mensagem}`;
-            window.open(urlWhatsApp, '_blank');
+            window.open(`https://wa.me/${numeroLimpo}?text=${mensagem}`, '_blank');
         }
 
-        // --- LÓGICA DO MODAL DE EXCLUSÃO ---
-        function showDeleteConfirmModal(id) {
+        // --- LÓGICA DE EXCLUSÃO (INDIVIDUAL E EM MASSA) ---
+        function showDeleteConfirmModal(id, isBulk = false) {
             const modal = document.getElementById('delete-modal');
             const confirmBtn = document.getElementById('confirm-delete-btn');
+            const titleEl = document.getElementById('delete-modal-title');
+            const textEl = document.getElementById('delete-modal-text');
+
+            if (isBulk) {
+                titleEl.textContent = 'Confirmar Exclusão em Massa';
+                textEl.textContent = `Tem certeza que deseja excluir os ${selectedContacts.size} contatos selecionados? Esta ação não pode ser desfeita.`;
+                confirmBtn.onclick = () => deleteSelectedContacts();
+            } else {
+                titleEl.textContent = 'Confirmar Exclusão';
+                textEl.textContent = 'Tem certeza que deseja excluir este contato? Esta ação não pode ser desfeita.';
+                confirmBtn.onclick = () => excluirContato(id);
+            }
+            
             modal.classList.remove('hidden');
-            modal.style.opacity = 0;
             setTimeout(() => modal.style.opacity = 1, 10);
-            
-            // Recria o botão para evitar múltiplos listeners
-            const newConfirmBtn = confirmBtn.cloneNode(true);
-            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-            
-            newConfirmBtn.onclick = () => excluirContato(id);
         }
 
         function hideDeleteConfirmModal() {
@@ -263,42 +372,76 @@
         }
         
         function excluirContato(id) {
-            let contatos = getContatos();
-            contatos = contatos.filter(c => c.id != id);
+            let contatos = getContatos().filter(c => c.id != id);
             salvarListaContatos(contatos);
-            renderizarContatos();
+            render();
             displayMessage('Contato excluído com sucesso!', 'success');
             hideDeleteConfirmModal();
+        }
+
+        function deleteSelectedContacts() {
+            let contatos = getContatos().filter(c => !selectedContacts.has(c.id));
+            salvarListaContatos(contatos);
+            selectedContacts.clear();
+            render();
+            displayMessage(`${selectedContacts.size} contatos excluídos com sucesso!`, 'success');
+            hideDeleteConfirmModal();
+        }
+
+        // --- LÓGICA DE SELEÇÃO EM MASSA ---
+        function handleSelectAll(isChecked) {
+            const checkboxes = document.querySelectorAll('.contact-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+                const id = parseInt(checkbox.dataset.id);
+                if (isChecked) {
+                    selectedContacts.add(id);
+                } else {
+                    selectedContacts.delete(id);
+                }
+            });
+            updateBulkDeleteButton();
+        }
+
+        function handleRowSelect(id, isChecked) {
+            if (isChecked) {
+                selectedContacts.add(id);
+            } else {
+                selectedContacts.delete(id);
+            }
+            updateBulkDeleteButton();
+        }
+
+        function updateBulkDeleteButton() {
+            const btn = document.getElementById('delete-selected-btn');
+            if (selectedContacts.size > 0) {
+                btn.classList.remove('hidden');
+                btn.querySelector('i').nextSibling.textContent = ` Excluir Selecionados (${selectedContacts.size})`;
+            } else {
+                btn.classList.add('hidden');
+            }
         }
 
         // --- LÓGICA DE NOTIFICAÇÃO ---
         function verificarAniversarios() {
             if (Notification.permission !== 'granted') return;
-            
             const hoje = new Date();
             const diaHoje = hoje.getDate();
             const mesHoje = hoje.getMonth() + 1;
             const anoHoje = hoje.getFullYear();
-
             let contatos = getContatos();
             let contatosAtualizados = false;
 
             contatos.forEach(contato => {
                 const [, mesNascStr, diaNascStr] = contato.nascimento.split('-');
-                const diaNasc = parseInt(diaNascStr, 10);
-                const mesNasc = parseInt(mesNascStr, 10);
-                
-                // Verifica se é aniversário e se já não foi notificado este ano
-                if (diaHoje === diaNasc && mesHoje === mesNasc && contato.lastNotifiedYear !== anoHoje) {
+                if (parseInt(diaNascStr, 10) === diaHoje && parseInt(mesNascStr, 10) === mesHoje && contato.lastNotifiedYear !== anoHoje) {
                     enviarNotificacao(contato);
                     contato.lastNotifiedYear = anoHoje;
                     contatosAtualizados = true;
                 }
             });
 
-            if (contatosAtualizados) {
-                salvarListaContatos(contatos);
-            }
+            if (contatosAtualizados) salvarListaContatos(contatos);
         }
 
         function enviarNotificacao(contato) {
@@ -306,70 +449,62 @@
                 body: `Hoje é o aniversário de ${contato.nome}! Clique para enviar uma mensagem.`,
                 icon: 'https://placehold.co/128x128/007bff/white?text=🎁',
                 vibrate: [200, 100, 200],
-                requireInteraction: true // Mantém a notificação até ser dispensada
+                requireInteraction: true
             };
             const notification = new Notification('🎉 Lembrete de Aniversário! 🎉', options);
-
-            notification.onclick = (event) => {
-                event.preventDefault(); 
-                if (contato.telefone) {
-                    enviarWhatsApp(contato.telefone, contato.nome);
-                }
+            notification.onclick = (e) => {
+                e.preventDefault(); 
+                if (contato.telefone) enviarWhatsApp(contato.telefone, contato.nome);
                 notification.close();
             };
         }
 
-        // --- IMPORTAÇÃO DE CSV ---
+        // --- IMPORTAÇÃO E EXPORTAÇÃO DE CSV ---
         function importarDeCSV(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (e) => {
                 const text = e.target.result;
-                const linhas = text.split('\n').filter(linha => linha.trim() !== '');
+                const linhas = text.split('\n').slice(1).filter(linha => linha.trim() !== ''); // Pula o cabeçalho
                 let contatosAtuais = getContatos();
                 let contatosImportadosCount = 0;
-
-                linhas.forEach((linha, index) => {
-                    const partes = linha.split(',').map(part => part.trim());
-                    if (partes.length < 2) return;
-
-                    const nome = partes[0];
-                    // A data de nascimento é sempre a última parte
-                    const nascimento = partes[partes.length - 1];
-                    // O telefone é o que sobra no meio (se houver)
-                    const telefone = partes.length > 2 ? partes.slice(1, -1).join(',') : '';
-
-                    // Valida o formato da data (AAAA-MM-DD)
+                linhas.forEach((linha) => {
+                    const [nome, telefone, nascimento] = linha.split(',').map(p => p.trim());
                     if (nome && nascimento && /^\d{4}-\d{2}-\d{2}$/.test(nascimento)) {
-                        // Verifica se o contato já existe
-                        const isDuplicate = contatosAtuais.some(c => c.nome === nome && c.nascimento === nascimento);
-                        if (!isDuplicate) {
-                            const novoContato = {
-                                id: Date.now() + index, // ID único para evitar colisões em importações rápidas
-                                nome,
-                                telefone,
-                                nascimento,
-                                lastNotifiedYear: null
-                            };
-                            contatosAtuais.push(novoContato);
+                        if (!contatosAtuais.some(c => c.nome === nome && c.nascimento === nascimento)) {
+                            contatosAtuais.push({ id: Date.now() + Math.random(), nome, telefone, nascimento, lastNotifiedYear: null });
                             contatosImportadosCount++;
                         }
                     }
                 });
-
                 if (contatosImportadosCount > 0) {
                     salvarListaContatos(contatosAtuais);
-                    renderizarContatos();
-                    displayMessage(`${contatosImportadosCount} contatos importados com sucesso!`, 'success');
+                    render();
+                    displayMessage(`${contatosImportadosCount} contatos importados!`, 'success');
                 } else {
-                    displayMessage('Nenhum contato novo foi importado. Verifique o formato do arquivo ou se os contatos já existem.', 'warning', 6000);
+                    displayMessage('Nenhum contato novo importado.', 'warning');
                 }
-                // Limpa o input de arquivo para permitir a mesma seleção novamente
                 event.target.value = '';
             };
             reader.readAsText(file);
+        }
+
+        function exportarParaCSV() {
+            const contatos = getContatos();
+            if (contatos.length === 0) {
+                displayMessage('Nenhum contato para exportar.', 'warning');
+                return;
+            }
+            const header = 'Nome,Telefone,Nascimento\n';
+            const rows = contatos.map(c => `${c.nome},${c.telefone || ''},${c.nascimento}`).join('\n');
+            const csvContent = 'data:text/csv;charset=utf-8,' + encodeURIComponent(header + rows);
+            const link = document.createElement('a');
+            link.setAttribute('href', csvContent);
+            link.setAttribute('download', 'contatos_aniversarios.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // --- FUNÇÕES UTILITÁRIAS ---
@@ -382,56 +517,26 @@
 
         function displayMessage(message, type = 'info', duration = 4000) {
             const statusEl = document.getElementById('notification-status');
-            const typeClasses = {
-                success: 'bg-green-100 text-green-800',
-                error: 'bg-red-100 text-red-800',
-                warning: 'bg-yellow-100 text-yellow-800',
-                info: 'bg-blue-100 text-blue-800',
-            };
+            const typeClasses = { success: 'bg-green-100 text-green-800', error: 'bg-red-100 text-red-800', warning: 'bg-yellow-100 text-yellow-800', info: 'bg-blue-100 text-blue-800' };
             statusEl.className = `p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${typeClasses[type] || typeClasses['info']}`;
             statusEl.innerHTML = `<strong>${message}</strong>`;
-
-            // Se a duração for maior que 0, a mensagem desaparece. Se for 0, permanece.
-            if (duration > 0) {
-                setTimeout(() => {
-                    // Só limpa a mensagem se for a mesma que foi exibida
-                    if (statusEl.innerHTML.includes(message)) {
-                         updateNotificationStatus();
-                    }
-                }, duration);
-            }
+            if (duration > 0) setTimeout(() => { if (statusEl.innerHTML.includes(message)) updateNotificationStatus() }, duration);
         }
         
         function updateNotificationStatus() {
             const statusEl = document.getElementById('notification-status');
             let statusText, extraInfo = '', type = 'info';
-            
             if (!('Notification' in window)) {
-                statusText = '<strong>Status da Notificação:</strong> Seu navegador não suporta notificações.';
+                statusText = '<strong>Status:</strong> Notificações não suportadas.';
                 type = 'error';
             } else {
                 switch (Notification.permission) {
-                    case 'granted':
-                        statusText = '<strong>Status da Notificação:</strong> Permitido ✔️';
-                        type = 'success';
-                        break;
-                    case 'denied':
-                        statusText = '<strong>Status da Notificação:</strong> Negado ❌';
-                        extraInfo = '<br><small>Para receber avisos, permita as notificações nas configurações do seu navegador.</small>';
-                        type = 'error';
-                        break;
-                    default: // 'default'
-                        statusText = '<strong>Status da Notificação:</strong> Aguardando sua permissão...';
-                        type = 'warning';
+                    case 'granted': statusText = '<strong>Status:</strong> Notificações Permitidas ✔️'; type = 'success'; break;
+                    case 'denied': statusText = '<strong>Status:</strong> Notificações Negadas ❌'; extraInfo = '<br><small>Permita nas configurações do navegador para receber avisos.</small>'; type = 'error'; break;
+                    default: statusText = '<strong>Status:</strong> Aguardando sua permissão...'; type = 'warning';
                 }
             }
-            
-            const typeClasses = {
-                success: 'bg-green-100 text-green-800',
-                error: 'bg-red-100 text-red-800',
-                warning: 'bg-yellow-100 text-yellow-800',
-                info: 'bg-blue-100 text-blue-800',
-            };
+            const typeClasses = { success: 'bg-green-100 text-green-800', error: 'bg-red-100 text-red-800', warning: 'bg-yellow-100 text-yellow-800', info: 'bg-blue-100 text-blue-800' };
             statusEl.className = `p-4 mb-6 rounded-lg text-center font-semibold transition-all duration-300 ${typeClasses[type]}`;
             statusEl.innerHTML = statusText + extraInfo;
         }
@@ -440,23 +545,8 @@
             if ('Notification' in window && Notification.permission === 'default') {
                 Notification.requestPermission().then(permission => {
                     updateNotificationStatus();
-                    if (permission === 'granted') {
-                        verificarAniversarios();
-                    }
+                    if (permission === 'granted') verificarAniversarios();
                 });
-            }
-        }
-
-        function testarNotificacao() {
-            if (Notification.permission === 'granted') {
-                new Notification('Teste de Notificação', {
-                    body: 'Se você vê esta mensagem, as notificações estão funcionando!',
-                    icon: 'https://placehold.co/128x128/28a745/white?text=OK',
-                });
-                displayMessage('Notificação de teste enviada!', 'success');
-            } else {
-                displayMessage('Por favor, permita as notificações para poder testar.', 'warning');
-                pedirPermissaoNotificacao();
             }
         }
     </script>
